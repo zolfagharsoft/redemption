@@ -11,7 +11,7 @@ libssl-dev
 locales
 libkrb5-dev
 libgssglue-dev
-c++11
+libstdc++11
 
 Optionally :
 python
