@@ -53,7 +53,6 @@
 
 #define STRMODULE_LOGIN            "login"
 #define STRMODULE_SELECTOR         "selector"
-#define STRMODULE_SELECTOR_LEGACY  "selector_legacy"
 #define STRMODULE_CONFIRM          "confirm"
 #define STRMODULE_CHALLENGE        "challenge"
 #define STRMODULE_VALID            "valid"
@@ -88,7 +87,6 @@ enum {
     MODULE_INTERNAL_BOUNCER2,
     MODULE_INTERNAL_TEST,
     MODULE_INTERNAL_WIDGET2_SELECTOR,
-    MODULE_INTERNAL_WIDGET2_SELECTOR_LEGACY,
     MODULE_INTERNAL_WIDGETTEST,
     MODULE_INTERNAL_WAIT_INFO,
     MODULE_EXIT_INTERNAL_CLOSE,
@@ -159,10 +157,6 @@ public:
         else if (!strcmp(module_cstr, STRMODULE_SELECTOR)) {
             LOG(LOG_INFO, "===============> MODULE_SELECTOR");
             return MODULE_INTERNAL_WIDGET2_SELECTOR;
-        }
-        else if (!strcmp(module_cstr, STRMODULE_SELECTOR_LEGACY)) {
-            LOG(LOG_INFO, "===============> MODULE_SELECTOR_LEGACY");
-            return MODULE_INTERNAL_WIDGET2_SELECTOR_LEGACY;
         }
         else if (!strcmp(module_cstr, STRMODULE_CONFIRM)) {
             LOG(LOG_INFO, "===============> MODULE_DIALOG_CONFIRM");
@@ -440,7 +434,6 @@ public:
             LOG(LOG_INFO, "ModuleManager::internal module 'test_card' ready");
             break;
         case MODULE_INTERNAL_WIDGET2_SELECTOR:
-        case MODULE_INTERNAL_WIDGET2_SELECTOR_LEGACY:
             LOG(LOG_INFO, "ModuleManager::Creation of internal module 'selector'");
             this->mod = new FlatSelector2Mod(this->ini,
                         // new FlatSelectorMod(this->ini,
