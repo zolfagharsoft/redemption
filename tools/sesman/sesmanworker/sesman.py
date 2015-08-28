@@ -1457,15 +1457,3 @@ class Sesman():
                 self.send_data({ "rt_display": res })
 
 # END CLASS - Sesman
-
-
-# This little main permets to run the Sesman Server Alone for one connection
-#if __name__ == u'__main__':
-#    sck = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#    sck.bind(('', 3350))
-#    sck.listen(100)
-#    connection, address = sck.accept()
-
-#    Sesman(connection, address)
-
-# EOF
