@@ -79,7 +79,7 @@ class Bitmap::DataBitmap : DataBitmapBase
     {}
 
     DataBitmap(BitsPerPixel bpp, uint16_t cx, uint16_t cy, uint8_t * ptr) noexcept
-    : DataBitmapBase(bpp, cx, cy, ptr)
+    : DataBitmapBase(bpp, align4(cx), cy, ptr)
     {}
 
     ~DataBitmap()

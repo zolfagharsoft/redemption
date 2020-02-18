@@ -123,15 +123,15 @@ public:
         uint16_t destTop = stream.in_uint16_le();
         uint16_t destRight = stream.in_uint16_le();
         uint16_t destBottom = stream.in_uint16_le();
-        destRect = Rect(destLeft, destTop, destRight, destBottom);
+        this->destRect = Rect(destLeft, destTop, destRight, destBottom);
 
-        bpp = stream.in_uint8();
-        flags = stream.in_uint8();
+        this->bpp = stream.in_uint8();
+        this->flags = stream.in_uint8();
         stream.in_skip_bytes(1);
-        codecId = stream.in_uint8();
-        width = stream.in_uint16_le();
-        height = stream.in_uint16_le();
-        bitmapDataLength = stream.in_uint32_le();
+        this->codecId = stream.in_uint8();
+        this->width = stream.in_uint16_le();
+        this->height = stream.in_uint16_le();
+        this->bitmapDataLength = stream.in_uint32_le();
 
         Rect rect(destLeft, destTop, width, height);
 
@@ -139,43 +139,43 @@ public:
 
             ::check_throw(stream, 24, "RDPSetSurfaceCommand::recv SetSurfaceBitsCommand EX_COMPRESSED_BITMAP_HEADER_PRESENT", ERR_RDP_DATA_TRUNCATED);
 
-            highUniqueId = stream.in_uint32_le();
-            lowUniqueId = stream.in_uint32_le();
-            tmMilliseconds = stream.in_uint64_le();
-            tmSeconds = stream.in_uint64_le();
+            this->highUniqueId = stream.in_uint32_le();
+            this->lowUniqueId = stream.in_uint32_le();
+            this->tmMilliseconds = stream.in_uint64_le();
+            this->tmSeconds = stream.in_uint64_le();
         }
 
         ::check_throw(stream, bitmapDataLength, "RDPSetSurfaceCommand::recv SetSurfaceBitsCommand bitmapDataLength", ERR_RDP_DATA_TRUNCATED);
 
-        bitmapData = stream.get_current();
+        this->bitmapData = stream.get_current();
     }
 
     void emit(OutStream & stream) const {
-        stream.out_uint16_le(destRect.ileft());
-        stream.out_uint16_le(destRect.itop());
-        stream.out_uint16_le(destRect.eright());
-        stream.out_uint16_le(destRect.ebottom());
+        stream.out_uint16_le(this->destRect.ileft());
+        stream.out_uint16_le(this->destRect.itop());
+        stream.out_uint16_le(this->destRect.eright());
+        stream.out_uint16_le(this->destRect.ebottom());
 
-        stream.out_uint8(bpp);
-        stream.out_uint8(flags);
+        stream.out_uint8(this->bpp);
+        stream.out_uint8(this->flags);
         stream.out_uint8(0); /* reserved */
         stream.out_uint8(this->codecId);
-        stream.out_uint16_le(width);
-        stream.out_uint16_le(height);
-        stream.out_uint32_le(bitmapDataLength);
+        stream.out_uint16_le(this->width);
+        stream.out_uint16_le(this->height);
+        stream.out_uint32_le(this->bitmapDataLength);
 
         if (flags & EX_COMPRESSED_BITMAP_HEADER_PRESENT) {
-            stream.out_uint32_le(highUniqueId);
-            stream.out_uint32_le(lowUniqueId);
-            stream.out_uint64_le(tmMilliseconds);
-            stream.out_uint64_le(tmSeconds);
+            stream.out_uint32_le(this->highUniqueId);
+            stream.out_uint32_le(this->lowUniqueId);
+            stream.out_uint64_le(this->tmMilliseconds);
+            stream.out_uint64_le(this->tmSeconds);
         }
 
-        stream.out_copy_bytes(bitmapData, bitmapDataLength);
+        stream.out_copy_bytes(this->bitmapData, this->bitmapDataLength);
     }
 
     static void log(int level, const RDPSurfaceContent &/*content*/) {
-        LOG(level, "RDPSetSurfaceCommand");
+        LOG(level, "RDPSurfaceCommand");
     }
 
 public:

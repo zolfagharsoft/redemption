@@ -4516,10 +4516,10 @@ protected:
                     rect.ileft(), rect.itop(), rect.width(), rect.height());
 
             bitmap_data.dest_left = base.x + rect.ileft();
-            bitmap_data.dest_right = base.x + rect.eright() - 1;
+            bitmap_data.dest_right = base.x + rect.eright();
             bitmap_data.dest_top = base.y + rect.itop();
             bitmap_data.dest_bottom = base.y + rect.ebottom() - 1;
-            bitmap_data.width = rect.width();
+            bitmap_data.width = align4(rect.width());
             bitmap_data.height = rect.height();
             bitmap_data.bits_per_pixel = 32;
             bitmap_data.flags = /*NO_BITMAP_COMPRESSION_HDR*/ 0;
