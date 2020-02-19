@@ -811,6 +811,7 @@ struct BitmapCodecCaps : public Capability {
                 this->haveRemoteFxCodec = true;
             }
         }
+        this->log("== BITMAP CODEC =================================");
     }
 
     void log(const char * msg) const {

@@ -396,18 +396,12 @@ private:
           , mppc_enc
           , bool(ini.get<cfg::client::rdp_compression>()) ? client_info.rdp_compression : false
           , bool(ini.get<cfg::client::enable_new_pointer_update>()) ? client_info.supported_new_pointer_update : false
-          , ( (ini.get<cfg::debug::primary_orders>()
-                ? RDPSerializer::Verbose::primary_orders   : RDPSerializer::Verbose::none)
-            | (ini.get<cfg::debug::secondary_orders>()
-                ? RDPSerializer::Verbose::secondary_orders : RDPSerializer::Verbose::none)
-            | (ini.get<cfg::debug::bitmap_update>()
-                ? RDPSerializer::Verbose::bitmap_update    : RDPSerializer::Verbose::none)
-            | (bool(verbose & Verbose::bmp_cache)
-                ? RDPSerializer::Verbose::bmp_cache        : RDPSerializer::Verbose::none)
-            | (bool(verbose & Verbose::internal_buffer)
-                ? RDPSerializer::Verbose::internal_buffer  : RDPSerializer::Verbose::none)
-            | (bool(verbose & Verbose::basic_trace4)
-                ? RDPSerializer::Verbose::pointer          : RDPSerializer::Verbose::none)
+          , ( (ini.get<cfg::debug::primary_orders>() ? RDPSerializer::Verbose::primary_orders : RDPSerializer::Verbose::none)
+            | (ini.get<cfg::debug::secondary_orders>() ? RDPSerializer::Verbose::secondary_orders : RDPSerializer::Verbose::none)
+            | (ini.get<cfg::debug::bitmap_update>() ? RDPSerializer::Verbose::bitmap_update : RDPSerializer::Verbose::none)
+            | (bool(verbose & Verbose::bmp_cache) ? RDPSerializer::Verbose::bmp_cache : RDPSerializer::Verbose::none)
+            | (bool(verbose & Verbose::internal_buffer) ? RDPSerializer::Verbose::internal_buffer : RDPSerializer::Verbose::none)
+            | (bool(verbose & Verbose::basic_trace4) ? RDPSerializer::Verbose::pointer : RDPSerializer::Verbose::none)
             )
         )
         {}
@@ -662,8 +656,60 @@ public:
     void draw(RDPGlyphIndex       const & cmd, Rect clip, gdi::ColorCtx color_ctx, GlyphCache const & gly_cache) override { this->draw_impl(cmd, clip, color_ctx, gly_cache); }
 
     void draw(RDPNineGrid const &  /*unused*/, Rect  /*unused*/, gdi::ColorCtx  /*unused*/, Bitmap const &  /*unused*/) override {}
-    void draw(RDPSetSurfaceCommand const & cmd) override { this->draw_impl(cmd); }
-    void draw(RDPSetSurfaceCommand const & cmd, RDPSurfaceContent const & content) override { this->draw_impl(cmd, content); }
+    void draw(RDPSetSurfaceCommand const & cmd) override {
+    
+        LOG(LOG_INFO, "RDPSetSurfaceCommand %s %s %s %s",
+            ((!this->client_info.bitmap_codec_caps.haveRemoteFxCodec)?"true":"false"),
+            ((cmd.codec != RDPSetSurfaceCommand::SETSURFACE_CODEC_REMOTEFX)?"true":"false"),
+            (!cmd.bitmapData?"true":"false"),
+            (!cmd.bitmapDataLength?"true":"false"));
+            
+        if (!this->client_info.bitmap_codec_caps.haveRemoteFxCodec 
+        || (cmd.codec != RDPSetSurfaceCommand::SETSURFACE_CODEC_REMOTEFX) 
+        || !cmd.bitmapData 
+        || !cmd.bitmapDataLength){
+            return;
+        }
+
+        LOG(LOG_INFO, "RDPSetSurfaceCommand command creation");
+
+        RDPSetSurfaceCommand newCmd = cmd;
+        newCmd.codecId = this->client_info.bitmap_codec_caps.bitmapCodecArray[0].codecID;
+        this->orders.graphics_update_pdu().send_set_surface_command(newCmd);
+    }
+    void draw(RDPSetSurfaceCommand const & cmd, RDPSurfaceContent const & content) override {
+        if (this->client_info.bitmap_codec_caps.haveRemoteFxCodec && cmd.codec == RDPSetSurfaceCommand::SETSURFACE_CODEC_REMOTEFX) {
+            // only notifies capture callbacks, don't send anything to the front client, it has already been done by
+            // a previous draw_impl(RDPSetSurfaceCommand const & cmd) call (with raw blob)
+            this->graphics_update->draw(cmd, content);
+            return;
+        }
+
+        /* no front remoteFx support, fallback and transcode to bitmapUpdates */
+        for (const Rect & rect : content.region.rects) {
+
+            Bitmap bitmap(content.data, content.stride, rect);
+            RDPBitmapData bitmap_data;
+            const Rect &base = cmd.destRect;
+
+            LOG(LOG_DEBUG, "Front::draw(RDPSurfaceContent): base=(%d,%d) (%d,%d)-%dx%d",
+            		base.x, base.y,
+                    rect.ileft(), rect.itop(), rect.width(), rect.height());
+
+            bitmap_data.dest_left = base.x + rect.ileft();
+            bitmap_data.dest_right = base.x + rect.eright()-1;
+            bitmap_data.dest_top = base.y + rect.itop();
+            bitmap_data.dest_bottom = base.y + rect.ebottom()-1;
+            
+            bitmap_data.width = bitmap.cx();
+            bitmap_data.height = bitmap.cy();
+            bitmap_data.bits_per_pixel = 32;
+            bitmap_data.flags = /*NO_BITMAP_COMPRESSION_HDR*/ 0;
+            bitmap_data.bitmap_length = bitmap.bmp_size();
+
+            this->draw_impl(bitmap_data, bitmap);
+        }
+    }
 
     void draw(const RDP::RAIL::NewOrExistingWindow            & cmd) override { this->draw_impl(cmd); }
     void draw(const RDP::RAIL::WindowIcon                     & cmd) override { this->draw_impl(cmd); }
@@ -4483,49 +4529,6 @@ protected:
         }
         else {
             LOG(LOG_WARNING, "Front::draw_impl(RDPPatBlt): This Primary Drawing Order is not supported by client!");
-        }
-    }
-
-    void draw_impl(RDPSetSurfaceCommand const & cmd) {
-        if (!this->client_info.bitmap_codec_caps.haveRemoteFxCodec || (cmd.codec != RDPSetSurfaceCommand::SETSURFACE_CODEC_REMOTEFX) ||
-                !cmd.bitmapData || !cmd.bitmapDataLength)
-            return;
-
-        RDPSetSurfaceCommand newCmd = cmd;
-        newCmd.codecId = this->client_info.bitmap_codec_caps.bitmapCodecArray[0].codecID;
-        this->orders.graphics_update_pdu().send_set_surface_command(newCmd);
-    }
-
-    void draw_impl(RDPSetSurfaceCommand const & cmd, RDPSurfaceContent const & content) {
-        if (this->client_info.bitmap_codec_caps.haveRemoteFxCodec && cmd.codec == RDPSetSurfaceCommand::SETSURFACE_CODEC_REMOTEFX) {
-            // only notifies capture callbacks, don't send anything to the front client, it has already been done by
-            // a previous draw_impl(RDPSetSurfaceCommand const & cmd) call (with raw blob)
-            this->graphics_update->draw(cmd, content);
-            return;
-        }
-
-        /* no front remoteFx support, fallback and transcode to bitmapUpdates */
-        for (const Rect & rect : content.region.rects) {
-
-            Bitmap bitmap(content.data, content.stride, rect);
-            RDPBitmapData bitmap_data;
-            const Rect &base = cmd.destRect;
-
-            LOG(LOG_DEBUG, "Front::draw(RDPSurfaceContent): base=(%d,%d) (%d,%d)-%dx%d",
-            		base.x, base.y,
-                    rect.ileft(), rect.itop(), rect.width(), rect.height());
-
-            bitmap_data.dest_left = base.x + rect.ileft();
-            bitmap_data.dest_right = base.x + rect.eright()-1;
-            bitmap_data.dest_top = base.y + rect.itop();
-            bitmap_data.dest_bottom = base.y + rect.ebottom()-1;
-            bitmap_data.width = align4(rect.width());
-            bitmap_data.height = rect.height();
-            bitmap_data.bits_per_pixel = 32;
-            bitmap_data.flags = /*NO_BITMAP_COMPRESSION_HDR*/ 0;
-            bitmap_data.bitmap_length = bitmap.bmp_size();
-
-            this->draw_impl(bitmap_data, bitmap);
         }
     }
 
