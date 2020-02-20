@@ -658,12 +658,6 @@ public:
     void draw(RDPNineGrid const &  /*unused*/, Rect  /*unused*/, gdi::ColorCtx  /*unused*/, Bitmap const &  /*unused*/) override {}
     void draw(RDPSetSurfaceCommand const & cmd) override {
     
-        LOG(LOG_INFO, "RDPSetSurfaceCommand %s %s %s %s",
-            ((!this->client_info.bitmap_codec_caps.haveRemoteFxCodec)?"true":"false"),
-            ((cmd.codec != RDPSetSurfaceCommand::SETSURFACE_CODEC_REMOTEFX)?"true":"false"),
-            (!cmd.bitmapData?"true":"false"),
-            (!cmd.bitmapDataLength?"true":"false"));
-            
         if (!this->client_info.bitmap_codec_caps.haveRemoteFxCodec 
         || (cmd.codec != RDPSetSurfaceCommand::SETSURFACE_CODEC_REMOTEFX) 
         || !cmd.bitmapData 
@@ -671,12 +665,11 @@ public:
             return;
         }
 
-        LOG(LOG_INFO, "RDPSetSurfaceCommand command creation");
+        LOG(LOG_INFO, "RDPSetSurfaceCommand command forwarding");
 
         RDPSetSurfaceCommand newCmd = cmd;
-        newCmd.codecId = this->client_info.bitmap_codec_caps.bitmapCodecArray[1].codecID;
+        newCmd.codecId = 0;
         this->orders.graphics_update_pdu().send_set_surface_command(newCmd);
-//        this->orders.graphics_update_pdu().send_set_surface_command(cmd);
     }
     void draw(RDPSetSurfaceCommand const & cmd, RDPSurfaceContent const & content) override {
         if (this->client_info.bitmap_codec_caps.haveRemoteFxCodec && cmd.codec == RDPSetSurfaceCommand::SETSURFACE_CODEC_REMOTEFX) {
@@ -875,7 +868,7 @@ public:
                     }
 
                     // clear all pending orders, caches data, and so on and
-                    // start a send_deactive, send_deman_active process with
+                    // start a send_deactive, send_demand_active process with
                     // the new resolution setting
                     /* shut down the rdp client */
                     this->state = ACTIVATE_AND_PROCESS_DATA;
@@ -3039,6 +3032,8 @@ private:
     /*****************************************************************************/
     void send_demand_active()
     {
+        LOG(LOG_INFO, "Front::send_demand_active()");
+
         LOG_IF(bool(this->verbose & Verbose::basic_trace), LOG_INFO,
             "Front::send_demand_active");
 
@@ -3225,15 +3220,16 @@ private:
                 if (this->ini.get<cfg::client::enable_remotefx>() 
                     && this->client_info.screen_info.bpp == BitsPerPixel{32})  {
                     BitmapCodecCaps bitmap_codec_caps(true);
-                    if (bool(this->verbose)) {
-                        bitmap_codec_caps.log("Front::send_demand_active: Sending to client");
-                    }
-
                     ScreenInfo &screen_info = this->client_info.screen_info;
                     maxRequestSize = std::max(maxRequestSize, static_cast<uint32_t>(screen_info.width * screen_info.height * 4));
 
                     bitmap_codec_caps.addCodec(CODEC_GUID_REMOTEFX);
                     bitmap_codec_caps.emit(stream);
+
+                    if (bool(this->verbose)) {
+                        bitmap_codec_caps.log("Front::send_demand_active: Sending to client");
+                    }
+
                     send_multifrag_caps = true;
                     caps_count++;
                 }
@@ -3273,6 +3269,7 @@ private:
 
     void process_confirm_active(InStream & stream)
     {
+        LOG(LOG_INFO, "Front::process_confirm_active()");
         LOG_IF(bool(this->verbose & Verbose::basic_trace), LOG_INFO,
             "Front::process_confirm_active");
         // TODO We should separate the parts relevant to caps processing and the part relevant to actual confirm active
