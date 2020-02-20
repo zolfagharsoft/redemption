@@ -674,8 +674,9 @@ public:
         LOG(LOG_INFO, "RDPSetSurfaceCommand command creation");
 
         RDPSetSurfaceCommand newCmd = cmd;
-        newCmd.codecId = this->client_info.bitmap_codec_caps.bitmapCodecArray[0].codecID;
+        newCmd.codecId = this->client_info.bitmap_codec_caps.bitmapCodecArray[1].codecID;
         this->orders.graphics_update_pdu().send_set_surface_command(newCmd);
+//        this->orders.graphics_update_pdu().send_set_surface_command(cmd);
     }
     void draw(RDPSetSurfaceCommand const & cmd, RDPSurfaceContent const & content) override {
         if (this->client_info.bitmap_codec_caps.haveRemoteFxCodec && cmd.codec == RDPSetSurfaceCommand::SETSURFACE_CODEC_REMOTEFX) {
@@ -691,10 +692,6 @@ public:
             Bitmap bitmap(content.data, content.stride, rect);
             RDPBitmapData bitmap_data;
             const Rect &base = cmd.destRect;
-
-            LOG(LOG_DEBUG, "Front::draw(RDPSurfaceContent): base=(%d,%d) (%d,%d)-%dx%d",
-            		base.x, base.y,
-                    rect.ileft(), rect.itop(), rect.width(), rect.height());
 
             bitmap_data.dest_left = base.x + rect.ileft();
             bitmap_data.dest_right = base.x + rect.eright()-1;
@@ -3225,22 +3222,29 @@ private:
                     send_multifrag_caps = true;
                 }
 
-                if (this->ini.get<cfg::client::enable_remotefx>() && this->client_info.screen_info.bpp == BitsPerPixel{32})  {
-                    BitmapCodecCaps bitmap_codec_caps(false);
+                if (this->ini.get<cfg::client::enable_remotefx>() 
+                    && this->client_info.screen_info.bpp == BitsPerPixel{32})  {
+                    BitmapCodecCaps bitmap_codec_caps(true);
+                    if (bool(this->verbose)) {
+                        bitmap_codec_caps.log("Front::send_demand_active: Sending to client");
+                    }
 
                     ScreenInfo &screen_info = this->client_info.screen_info;
                     maxRequestSize = std::max(maxRequestSize, static_cast<uint32_t>(screen_info.width * screen_info.height * 4));
 
                     bitmap_codec_caps.addCodec(CODEC_GUID_REMOTEFX);
                     bitmap_codec_caps.emit(stream);
+                    send_multifrag_caps = true;
                     caps_count++;
                 }
 
                 if (send_multifrag_caps) {
+                    multifrag_caps.MaxRequestSize = maxRequestSize;
+
                     if (bool(this->verbose)) {
                         multifrag_caps.log("Front::send_demand_active: Sending to client");
                     }
-                    multifrag_caps.MaxRequestSize = maxRequestSize;
+
                     multifrag_caps.emit(stream);
                     caps_count++;
                 }

@@ -322,30 +322,47 @@ struct NSCodecCaps
     }
 };
 
+// 2.2.1.2 TS_RFX_SRVR_CAPS_CONTAINER
+
+// The TS_RFX_SRVR_CAPS_CONTAINER structure is the top-level server capability
+// container, which is sent from the server to the client. It is encapsulated
+// in the codecProperties field of the Bitmap Codec structure ([MS-RDPBCGR]
+// section 2.2.7.2.10.1.1), which is ultimately encapsulated in the Bitmap
+// Codecs Capability Set ([MS-RDPBCGR] section 2.2.7.2.10). The Bitmap Codecs
+// Capability Set is encapsulated in a server-to-client Demand Active PDU
+//  ([MS-RDPBCGR] section 2.2.1.13.1).
+
+// reserved (variable): A variable-sized array of bytes.
+// All the bytes in this field MUST be set to 0. The size of the field is given
+// by the corresponding codecPropertiesLength field of the parent
+// TS_BITMAPCODEC, as specified in [MS-RDPBCGR] section 2.2.7.2.10.1.1 Bitmap
+// Codecs Capability Set.
 
 struct RFXSrvrCaps
 {
     uint16_t len{0};
 
-    RFXSrvrCaps() = default;
-
-    // void setReserved(uint16_t len) {
-    //     this->reserved = std::make_unique<uint8_t[]>(len);
-    //     memset(this->reserved.get(), 0xff, len);
-    // }
-
-    void emit(OutStream & /*out_stream*/) const
+    RFXSrvrCaps() 
     {
+        LOG(LOG_INFO, "RFXSrvrCaps()");
+    }
+
+    void emit(OutStream & out_stream) const
+    {
+        LOG(LOG_INFO, "RFXSrvrCaps::emit()");
+        out_stream.out_clear_bytes(this->len);
     }
 
     void recv(InStream & stream, uint16_t len)
     {
+        LOG(LOG_INFO, "RFXSrvrCaps::recv()");
         stream.in_skip_bytes(len);
         this->len = len;
     }
 
     [[nodiscard]] size_t computeSize() const
     {
+        LOG(LOG_INFO, "RFXSrvrCaps::computeSize()");
         return this->len;
     }
 };
@@ -459,6 +476,7 @@ struct RFXClntCaps
     std::vector<RFXICap> icapsData{RFXICap{}};
 
     RFXClntCaps() {
+        LOG(LOG_INFO, "RFXClntCaps()");
         icapsData.resize(2);
         icapsData[0].entropyBits = CLW_ENTROPY_RLGR1;
         icapsData[1].entropyBits = CLW_ENTROPY_RLGR3;
@@ -466,6 +484,7 @@ struct RFXClntCaps
 
     void emit(OutStream & out) const
     {
+        LOG(LOG_INFO, "RFXClntCaps::emit()");
         /* TS_RFX_CLNT_CAPS_CONTAINER */
         out.out_uint32_le(this->length);
         out.out_uint32_le(this->captureFlags);
@@ -491,6 +510,7 @@ struct RFXClntCaps
 
     void recv(InStream & stream, uint16_t len)
     {
+        LOG(LOG_INFO, "RFXClntCaps::recv()");
         if (len < 12) {
             LOG(LOG_ERR, "Truncated RFXClntCaps, need=%u remains=%zu", this->capsLength, stream.in_remain());
             throw Error(ERR_MCS_PDU_TRUNCATED);
@@ -625,13 +645,18 @@ struct BitmapCodec
             this->codecProperties.interface = RFXNoCaps{};
             break;
         case CODEC_GUID_REMOTEFX:
-        case CODEC_GUID_IMAGE_REMOTEFX:
-            if (codecGUID == CODEC_GUID_IMAGE_REMOTEFX){
-                memcpy(this->codecGUID, "\xD4\xCC\x44\x27\x8A\x9D\x74\x4E\x80\x3C\x0E\xCB\xEE\xA1\x9C\x54", 16);
+            memcpy(this->codecGUID, "\x12\x2F\x77\x76\x72\xBD\x63\x44\xAF\xB3\xB7\x3C\x9C\x6F\x78\x86", 16);
+            if (client) {
+                this->codecProperties.interface = RFXClntCaps();
             }
             else {
-                memcpy(this->codecGUID, "\x12\x2F\x77\x76\x72\xBD\x63\x44\xAF\xB3\xB7\x3C\x9C\x6F\x78\x86", 16);
+                this->codecProperties.interface = RFXSrvrCaps();
             }
+            this->codecType = CODEC_REMOTEFX;
+            break;
+
+        case CODEC_GUID_IMAGE_REMOTEFX:
+            memcpy(this->codecGUID, "\xD4\xCC\x44\x27\x8A\x9D\x74\x4E\x80\x3C\x0E\xCB\xEE\xA1\x9C\x54", 16);
 
             if (client) {
                 this->codecProperties.interface = RFXClntCaps();
@@ -691,9 +716,9 @@ struct BitmapCodec
         }
     }
 
-    void emit(OutStream & out) const {
+    void emit(OutStream & out, bool clientMode) const {
         out.out_copy_bytes(this->codecGUID, 16);
-        out.out_uint8(this->codecID);
+        out.out_uint8(clientMode?this->codecID:0);
         out.out_uint16_le(this->codecPropertiesLength);
 
         //byte_ptr props = out.get_current();
@@ -712,7 +737,8 @@ struct BitmapCodec
     }
 
     void log() const {
-        LOG(LOG_INFO, "  -%s, id=%d, size=%lu codecProperties=%lu", bitmapCodecTypeStr(this->codecType),
+        LOG(LOG_INFO, "  -%s, id=%d, size=%lu codecProperties=%lu", 
+                bitmapCodecTypeStr(this->codecType),
                 this->codecID, this->computeSize(), this->codecProperties.computeSize());
     }
 };
@@ -744,14 +770,14 @@ struct BitmapCodecCaps : public Capability {
         switch(codecType) {
         case CODEC_GUID_REMOTEFX:
         case CODEC_GUID_IMAGE_REMOTEFX: {
-            BitmapCodec *codec = &bitmapCodecArray[bitmapCodecCount];
+            BitmapCodec *codec = &this->bitmapCodecArray[this->bitmapCodecCount];
             codec->setCodecGUID(codecType, this->clientMode);
-            ret = codec->codecID = codecCounter;
-            haveRemoteFxCodec = true;
-            bitmapCodecCount++;
-            codecCounter++;
-            if (codecCounter == 1) { /* reserved for NSCodec */
-                codecCounter++;
+            ret = codec->codecID = this->codecCounter;
+            this->haveRemoteFxCodec = true;
+            this->bitmapCodecCount++;
+            this->codecCounter++;
+            if (this->codecCounter == 1) { /* reserved for NSCodec */
+                this->codecCounter++;
             }
             break;
         }
@@ -768,8 +794,8 @@ struct BitmapCodecCaps : public Capability {
 
     size_t computeCodecsSize() {
         size_t codecsLen = 0;
-        for (int i = 0; i < bitmapCodecCount; i++) {
-            codecsLen += bitmapCodecArray[i].computeSize();
+        for (int i = 0; i < this->bitmapCodecCount; i++) {
+            codecsLen += this->bitmapCodecArray[i].computeSize();
         }
 
         return codecsLen;
@@ -777,18 +803,19 @@ struct BitmapCodecCaps : public Capability {
 
     void emit(OutStream & out) const {
         size_t codecsLen = 0;
-        for (int i = 0; i < bitmapCodecCount; i++) {
-            codecsLen += bitmapCodecArray[i].computeSize();
+        for (int i = 0; i < this->bitmapCodecCount; i++) {
+            codecsLen += this->bitmapCodecArray[i].computeSize();
         }
 
         out.out_uint16_le(this->capabilityType);
         out.out_uint16_le(this->len);
 
-        out.out_uint8(bitmapCodecCount);
+        out.out_uint8(this->bitmapCodecCount);
 
-        for (int i = 0; i < bitmapCodecCount; i++) {
-            bitmapCodecArray[i].emit(out);
+        for (int i = 0; i < this->bitmapCodecCount; i++) {
+            this->bitmapCodecArray[i].emit(out, this->clientMode);
         }
+        this->log("=>=> BITMAP CODEC EMIT =================================");
     }
 
     void recv(InStream & stream, uint16_t len) {
@@ -811,15 +838,17 @@ struct BitmapCodecCaps : public Capability {
                 this->haveRemoteFxCodec = true;
             }
         }
-        this->log("== BITMAP CODEC =================================");
+        this->log("=>=> BITMAP CODEC RECV =================================");
     }
 
     void log(const char * msg) const {
-        LOG(LOG_INFO, "%s BitmapCodecCaps (%u bytes)", msg, this->len);
-        LOG(LOG_INFO, "BitmapCodecsCaps::BitmapCodecs::bitmapCodecCount %u", this->bitmapCodecCount);
+        LOG(LOG_INFO, "%s BitmapCodecCaps [%s]", msg, this->clientMode?"client":"serveur");
+        LOG(LOG_INFO, "BitmapCodecCaps (%u bytes)", this->len);
+        LOG(LOG_INFO, "BitmapCodecCaps::BitmapCodecs::bitmapCodecCount %u", this->bitmapCodecCount);
 
         for (auto i = 0; i < this->bitmapCodecCount; i++) {
             this->bitmapCodecArray[i].log();
         }
+        LOG(LOG_INFO, "<=<= BitmapCodecsCaps ==============================");
     }
 };

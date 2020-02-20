@@ -3060,50 +3060,8 @@ public:
                                 LOG_INFO, "PDUTYPE_DEMANDACTIVEPDU");
 
                             this->orders.reset();
-
-// 2.2.1.13.1.1 Demand Active PDU Data (TS_DEMAND_ACTIVE_PDU)
-// ==========================================================
-
-//    shareControlHeader (6 bytes): Share Control Header (section 2.2.8.1.1.1.1 ) containing information
-//  about the packet. The type subfield of the pduType field of the Share Control Header MUST be set to
-// PDUTYPE_DEMANDACTIVEPDU (1).
-
-//    shareId (4 bytes): A 32-bit, unsigned integer. The share identifier for the packet (see [T128]
-// section 8.4.2 for more information regarding share IDs).
-
-                            this->share_id = sctrl.payload.in_uint32_le();
-
-//    lengthSourceDescriptor (2 bytes): A 16-bit, unsigned integer. The size in bytes of the sourceDescriptor
-// field.
-                            uint16_t lengthSourceDescriptor = sctrl.payload.in_uint16_le();
-
-//    lengthCombinedCapabilities (2 bytes): A 16-bit, unsigned integer. The combined size in bytes of the
-// numberCapabilities, pad2Octets, and capabilitySets fields.
-
-                            uint16_t lengthCombinedCapabilities = sctrl.payload.in_uint16_le();
-
-//    sourceDescriptor (variable): A variable-length array of bytes containing a source descriptor (see
-// [T128] section 8.4.1 for more information regarding source descriptors).
-
-                            // TODO before skipping we should check we do not go outside current stream
-                            sctrl.payload.in_skip_bytes(lengthSourceDescriptor);
-
-// numberCapabilities (2 bytes): A 16-bit, unsigned integer. The number of capability sets included in the
-// Demand Active PDU.
-
-// pad2Octets (2 bytes): A 16-bit, unsigned integer. Padding. Values in this field MUST be ignored.
-
-// capabilitySets (variable): An array of Capability Set (section 2.2.1.13.1.1.1) structures. The number
-//  of capability sets is specified by the numberCapabilities field.
-
-                            this->process_server_caps(sctrl.payload, lengthCombinedCapabilities);
-
-
-// sessionId (4 bytes): A 32-bit, unsigned integer. The session identifier. This field is ignored by the client.
-
-                            uint32_t sessionId = sctrl.payload.in_uint32_le();
-
-                            (void)sessionId;
+                            
+                            this->process_demand_active(sctrl);
                             this->send_confirm_active(drawable);
                             this->send_synchronise();
                             this->send_control(RDP_CTL_COOPERATE);
@@ -3335,6 +3293,7 @@ public:
     // sessionId (4 bytes): A 32-bit, unsigned integer. The session identifier. This field is ignored by the client.
 
     void send_confirm_active(gdi::GraphicApi& drawable) {
+        LOG(LOG_INFO, "mod_rdp::send_confirm_active");
         LOG_IF(bool(this->verbose & RDPVerbose::capabilities),
             LOG_INFO, "mod_rdp::send_confirm_active");
         this->send_data_request_ex(
@@ -4941,7 +4900,57 @@ public:
         return caps;
     }
 
+// 2.2.1.13.1.1 Demand Active PDU Data (TS_DEMAND_ACTIVE_PDU)
+// ==========================================================
 
+//    shareControlHeader (6 bytes): Share Control Header (section 2.2.8.1.1.1.1)
+// containing information about the packet. The type subfield of the pduType
+// field of the Share Control Header MUST be set to PDUTYPE_DEMANDACTIVEPDU (1).
+
+//    shareId (4 bytes): A 32-bit, unsigned integer. The share identifier for
+// the packet (see [T128] section 8.4.2 for more information regarding share
+// IDs).
+
+//    lengthSourceDescriptor (2 bytes): A 16-bit, unsigned integer. The size
+//  in bytes of the sourceDescriptor field.
+
+//    lengthCombinedCapabilities (2 bytes): A 16-bit, unsigned integer. 
+// The combined size in bytes of the numberCapabilities, pad2Octets, and
+// capabilitySets fields.
+
+//    sourceDescriptor (variable): A variable-length array of bytes containing 
+// a source descriptor (see [T128] section 8.4.1 for more information regarding
+// source descriptors).
+
+// numberCapabilities (2 bytes): A 16-bit, unsigned integer. The number of capability sets included in the
+// Demand Active PDU.
+
+// pad2Octets (2 bytes): A 16-bit, unsigned integer. Padding. Values in this field MUST be ignored.
+
+// capabilitySets (variable): An array of Capability Set (section 2.2.1.13.1.1.1) structures. The number
+//  of capability sets is specified by the numberCapabilities field.
+
+// sessionId (4 bytes): A 32-bit, unsigned integer. The session identifier. This field is ignored by the client.
+
+    void process_demand_active(ShareControl_Recv & sctrl)
+    {
+        LOG(LOG_INFO, "mod_rdp::recv_demand_active");
+
+        this->share_id = sctrl.payload.in_uint32_le();
+
+        uint16_t lengthSourceDescriptor = sctrl.payload.in_uint16_le();
+        uint16_t lengthCombinedCapabilities = sctrl.payload.in_uint16_le();
+
+        // TODO before skipping we should check we do not go outside current stream
+        sctrl.payload.in_skip_bytes(lengthSourceDescriptor);
+
+        // Read number of capabilities and capabilities content
+        this->process_server_caps(sctrl.payload, lengthCombinedCapabilities);
+
+        uint32_t sessionId = sctrl.payload.in_uint32_le();
+        (void)sessionId;
+    }
+    
     void process_server_caps(InStream & stream, uint16_t len) {
         // TODO check stream consumed and len
         (void)len;
