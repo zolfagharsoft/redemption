@@ -1049,7 +1049,7 @@ struct CS_BitmapCodecCaps : public Capability {
         for (int i = 0; i < this->bitmapCodecCount; i++) {
             this->bitmapCodecArray[i].emit(out);
         }
-        this->log("=>=> SC BITMAP CODEC EMIT =================================");
+        this->log("=>=> CS_BITMAP CODEC EMIT =================================");
     }
 
     void recv(InStream & stream, uint16_t len) {
@@ -1087,6 +1087,56 @@ struct CS_BitmapCodecCaps : public Capability {
     }
 };
 
+
+/** @brief BitmapCodec capabilities */
+struct Recv_CS_BitmapCodecCaps : public Capability {
+
+    CS_BitmapCodec bitmapCodecArray[BITMAPCODECS_MAX_SIZE] {};
+    uint8_t bitmapCodecCount{0};
+
+    bool haveRemoteFxCodec{false};
+    uint8_t codecCounter{2};
+
+    Recv_CS_BitmapCodecCaps()
+    : Capability(CAPSETTYPE_BITMAP_CODECS, CAPLEN_BITMAP_CODECS_CAPS)
+    {}
+
+    void recv(InStream & stream, uint16_t len) {
+        this->len = len;
+
+        unsigned expected = 1;
+        if (this->len < expected){
+            LOG(LOG_ERR, "Truncated BitmapCodecs, need=%u remains=%hu", expected, this->len);
+            throw Error(ERR_MCS_PDU_TRUNCATED);
+        }
+
+        this->bitmapCodecCount = stream.in_uint8();
+
+        InStream subStream({stream.get_current(), len-5u});
+
+        for (int i = 0; i < this->bitmapCodecCount; i++) {
+            this->bitmapCodecArray[i].recv(subStream);
+
+            if (this->bitmapCodecArray[i].codecType == CODEC_REMOTEFX) {
+                this->haveRemoteFxCodec = true;
+            }
+        }
+        this->log("=>=> RECV_CS_BITMAP CODEC RECV =================================");
+    }
+
+    void log(const char * msg) const {
+        LOG(LOG_INFO, "%s RECV_CS_BitmapCodecCaps [Server to Client]", msg);
+        LOG(LOG_INFO, "RECV_CS_BitmapCodecCaps (%u bytes)", this->len);
+        LOG(LOG_INFO, "RECV_CS_BitmapCodecCaps::BitmapCodec::bitmapCodecCount %u", this->bitmapCodecCount);
+
+        for (auto i = 0; i < this->bitmapCodecCount; i++) {
+            this->bitmapCodecArray[i].log();
+        }
+        LOG(LOG_INFO, "<=<= RECV_CS_BitmapCodecsCaps ==============================");
+    }
+};
+
+
 struct SC_BitmapCodec
 {
     uint8_t  codecGUID[16] {}; // 16 bits array filled with fixed lists of values
@@ -1106,19 +1156,19 @@ struct SC_BitmapCodec
 
     struct CodecProperties
     {
-        void SC_emit(OutStream & out) const
+        void emit(OutStream & out) const
         {
             auto f = [&](auto& caps) -> void { caps.emit(out); };
             std::visit(f, this->interface);
         }
 
-        void SC_recv(InStream & stream, uint16_t len)
+        void recv(InStream & stream, uint16_t len)
         {
             auto f = [&](auto& caps) -> void { caps.recv(stream, len); };
             std::visit(f, this->interface);
         }
 
-        [[nodiscard]] size_t SC_computeSize() const
+        [[nodiscard]] size_t computeSize() const
         {
             auto f = [](auto& caps) -> size_t { return caps.computeSize(); };
             return std::visit(f, this->interface);
@@ -1131,7 +1181,7 @@ struct SC_BitmapCodec
 
     SC_BitmapCodec() = default;
 
-    void SC_setCodecGUID(uint8_t codecGUID)
+    void setCodecGUID(uint8_t codecGUID)
     {
         switch(codecGUID) {
         case CODEC_GUID_NSCODEC:
@@ -1158,14 +1208,14 @@ struct SC_BitmapCodec
             break;
         }
 
-        this->codecPropertiesLength = this->codecProperties.SC_computeSize();
+        this->codecPropertiesLength = this->codecProperties.computeSize();
     }
 
     [[nodiscard]] size_t computeSize() const {
-        return 19u + this->codecProperties.SC_computeSize();
+        return 19u + this->codecProperties.computeSize();
     }
 
-    void SC_recv(InStream & stream) {
+    void recv(InStream & stream) {
         ::check_throw(stream, 19, "SC_BitmapCodec::recv", ERR_MCS_PDU_TRUNCATED);
 
         stream.in_copy_bytes(codecGUID, 16);
@@ -1178,12 +1228,12 @@ struct SC_BitmapCodec
             /* CODEC_GUID_NSCODEC */
             this->codecProperties.interface = NSCodecCaps();
             this->codecType = CODEC_NS;
-            this->codecProperties.SC_recv(stream, this->codecPropertiesLength);
+            this->codecProperties.recv(stream, this->codecPropertiesLength);
         } else if((memcmp(codecGUID, "\x12\x2F\x77\x76\x72\xBD\x63\x44\xAF\xB3\xB7\x3C\x9C\x6F\x78\x86", 16) == 0)
                || (memcmp(codecGUID, "\xD4\xCC\x44\x27\x8A\x9D\x74\x4E\x80\x3C\x0E\xCB\xEE\xA1\x9C\x54", 16) == 0)) {
             /* CODEC_GUID_REMOTEFX or CODEC_GUID_IMAGE_REMOTEFX */
             this->codecProperties.interface = RFXSrvrCaps();
-            this->codecProperties.SC_recv(stream, this->codecPropertiesLength);
+            this->codecProperties.recv(stream, this->codecPropertiesLength);
             this->codecType = CODEC_REMOTEFX;
         } else if (memcmp(codecGUID, "\xA6\x51\x43\x9C\x35\x35\xAE\x42\x91\x0C\xCD\xFC\xE5\x76\x0B\x58", 16) == 0) {
             /* CODEC_GUID_IGNORE */
@@ -1196,13 +1246,13 @@ struct SC_BitmapCodec
         }
     }
 
-    void SC_emit(OutStream & out) const {
+    void emit(OutStream & out) const {
         out.out_copy_bytes(this->codecGUID, 16);
         out.out_uint8(0);
         out.out_uint16_le(this->codecPropertiesLength);
 
         //byte_ptr props = out.get_current();
-        this->codecProperties.SC_emit(out);
+        this->codecProperties.emit(out);
 
         //LOG(LOG_ERR, "codecProperties:");
         //hexdump(props, this->codecPropertiesLength);
@@ -1219,7 +1269,7 @@ struct SC_BitmapCodec
     void log() const {
         LOG(LOG_INFO, "  -%s, id=%d, size=%lu codecProperties=%lu", 
                 bitmapCodecTypeStr(this->codecType),
-                this->codecID, this->computeSize(), this->codecProperties.SC_computeSize());
+                this->codecID, this->computeSize(), this->codecProperties.computeSize());
     }
 };
 
@@ -1244,7 +1294,7 @@ struct SC_BitmapCodecCaps : public Capability {
         case CODEC_GUID_REMOTEFX:
         case CODEC_GUID_IMAGE_REMOTEFX: {
             SC_BitmapCodec *codec = &this->bitmapCodecArray[this->bitmapCodecCount];
-            codec->SC_setCodecGUID(codecType);
+            codec->setCodecGUID(codecType);
             ret = codec->codecID = this->codecCounter;
             this->haveRemoteFxCodec = true;
             this->bitmapCodecCount++;
@@ -1286,7 +1336,7 @@ struct SC_BitmapCodecCaps : public Capability {
         out.out_uint8(this->bitmapCodecCount);
 
         for (int i = 0; i < this->bitmapCodecCount; i++) {
-            this->bitmapCodecArray[i].SC_emit(out);
+            this->bitmapCodecArray[i].emit(out);
         }
         this->log("=>=> CS BITMAP CODEC EMIT =================================");
     }
@@ -1305,13 +1355,13 @@ struct SC_BitmapCodecCaps : public Capability {
         InStream subStream({stream.get_current(), len-5u});
 
         for (int i = 0; i < this->bitmapCodecCount; i++) {
-            this->bitmapCodecArray[i].SC_recv(subStream);
+            this->bitmapCodecArray[i].recv(subStream);
 
             if (this->bitmapCodecArray[i].codecType == CODEC_REMOTEFX) {
                 this->haveRemoteFxCodec = true;
             }
         }
-        this->log("=>=> CS BITMAP CODEC RECV =================================");
+        this->log("=>=> SC_BITMAP CODEC RECV =================================");
     }
 
     void log(const char * msg) const {
@@ -1323,5 +1373,54 @@ struct SC_BitmapCodecCaps : public Capability {
             this->bitmapCodecArray[i].log();
         }
         LOG(LOG_INFO, "<=<= SC_BitmapCodecsCaps ==============================");
+    }
+};
+
+/** @brief BitmapCodec capabilities */
+struct Recv_SC_BitmapCodecCaps : public Capability {
+
+    SC_BitmapCodec bitmapCodecArray[BITMAPCODECS_MAX_SIZE] {};
+    uint8_t bitmapCodecCount{0};
+
+    bool clientMode = false;
+    bool haveRemoteFxCodec{false};
+    uint8_t codecCounter{2};
+
+    Recv_SC_BitmapCodecCaps()
+    : Capability(CAPSETTYPE_BITMAP_CODECS, CAPLEN_BITMAP_CODECS_CAPS)
+    {}
+
+    void recv(InStream & stream, uint16_t len) {
+        this->len = len;
+
+        unsigned expected = 1;
+        if (this->len < expected){
+            LOG(LOG_ERR, "Truncated BitmapCodecs, need=%u remains=%hu", expected, this->len);
+            throw Error(ERR_MCS_PDU_TRUNCATED);
+        }
+
+        this->bitmapCodecCount = stream.in_uint8();
+
+        InStream subStream({stream.get_current(), len-5u});
+
+        for (int i = 0; i < this->bitmapCodecCount; i++) {
+            this->bitmapCodecArray[i].recv(subStream);
+
+            if (this->bitmapCodecArray[i].codecType == CODEC_REMOTEFX) {
+                this->haveRemoteFxCodec = true;
+            }
+        }
+        this->log("=>=> SC_BITMAP CODEC RECV =================================");
+    }
+
+    void log(const char * msg) const {
+        LOG(LOG_INFO, "%s Recv_SC_BitmapCodecCaps [Client to Server]", msg);
+        LOG(LOG_INFO, "Recv_SC_BitmapCodecCaps (%u bytes)", this->len);
+        LOG(LOG_INFO, "Recv_SC_BitmapCodecCaps::BitmapCodecs::bitmapCodecCount %u", this->bitmapCodecCount);
+
+        for (auto i = 0; i < this->bitmapCodecCount; i++) {
+            this->bitmapCodecArray[i].log();
+        }
+        LOG(LOG_INFO, "<=<= Recv_SC_BitmapCodecsCaps ==============================");
     }
 };
