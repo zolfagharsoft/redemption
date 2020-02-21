@@ -23,6 +23,7 @@
 #include "utils/stream.hpp"
 #include "utils/log.hpp"
 #include "utils/rect.hpp"
+#include "utils/hexdump.hpp"
 #include "utils/region.hpp"
 #include "core/error.hpp"
 #include "core/stream_throw_helpers.hpp"
@@ -70,52 +71,73 @@ public:
 
     void recv(InStream & stream) {
         // 2.2.9.2.1 Set Surface Bits Command (TS_SURFCMD_SET_SURF_BITS)
-        // The Set Surface Bits Command is used to transport encoded bitmap data destined for a rectangular
-        // region of the primary drawing surface from an RDP server to an RDP client.
+        
+        // The Set Surface Bits Command is used to transport encoded bitmap data
+        //  destined for a rectangular region of the primary drawing surface
+        //  from an RDP server to an RDP client.
         //
-        // cmdType (2 bytes): A 16-bit, unsigned integer. Surface Command type. This field MUST be set to
-        //             CMDTYPE_SET_SURFACE_BITS (0x0001).
-        // destLeft (2 bytes): A 16-bit, unsigned integer. Left bound of the destination rectangle that will
-        //            contain the decoded bitmap data.
-        // destTop (2 bytes): A 16-bit, unsigned integer. Top bound of the destination rectangle that will
-        //            contain the decoded bitmap data.
-        // destRight (2 bytes): A 16-bit, unsigned integer. Exclusive right bound of the destination rectangle
-        //            that will contain the decoded bitmap data. This field SHOULD be ignored, as the width of the
-        //            encoded bitmap image is specified in the Extended Bitmap Data (section 2.2.9.2.1.1) present in
-        //            the variable-length bitmapData field.
-        // destBottom (2 bytes): A 16-bit, unsigned integer. Exclusive bottom bound of the destination
-        //            rectangle that will contain the decoded bitmap data. This field SHOULD be ignored, as the height
-        //            of the encoded bitmap image is specified in the Extended Bitmap Data present in the variable-
-        //            length bitmapData field.
-        // bitmapData (variable): An Extended Bitmap Data structure that contains an encoded bitmap image.
-        //
+        // cmdType (2 bytes): A 16-bit, unsigned integer. Surface Command type.
+        //   This field MUST be set to CMDTYPE_SET_SURFACE_BITS (0x0001).
+        
+        // destLeft (2 bytes): A 16-bit, unsigned integer. Left bound of the
+        //   destination rectangle that will contain the decoded bitmap data.
+        
+        // destTop (2 bytes): A 16-bit, unsigned integer. Top bound of the
+        //   destination rectangle that will contain the decoded bitmap data.
+        
+        // destRight (2 bytes): A 16-bit, unsigned integer. Exclusive right
+        //   bound of the destination rectangle that will contain the decoded
+        //   bitmap data. This field SHOULD be ignored, as the width of the
+        //   encoded bitmap image is specified in the Extended Bitmap Data
+        //   (section 2.2.9.2.1.1) present in the variable-length bitmapData
+        //   field.
+        
+        // destBottom (2 bytes): A 16-bit, unsigned integer. Exclusive bottom
+        //   bound of the destination rectangle that will contain the decoded
+        //   bitmap data. This field SHOULD be ignored, as the height of the
+        //   encoded bitmap image is specified in the Extended Bitmap Data
+        //   present in the variable-length bitmapData field.
+
+        // bitmapData (variable): An Extended Bitmap Data structure that
+        //   contains an encoded bitmap image.
 
         // 2.2.9.2.1.1 Extended Bitmap Data (TS_ BITMAP_DATA_EX)
         // The TS_BITMAP_DATA_EX structure is used to encapsulate encoded bitmap data.
         //
-        // bpp (1 byte): An 8-bit, unsigned integer. The color depth of the bitmap data in bits-per-pixel.
+        // bpp (1 byte): An 8-bit, unsigned integer. The color depth of the
+        //   bitmap data in bits-per-pixel.
+        
         // flags (1 byte): An 8-bit, unsigned integer that contains flags.
-        //      +-------------------------------------+------------------------------------------------+
-        //      |               Flag                  |    Meaning                                     |
-        //      +-------------------------------------+------------------------------------------------+
-        //        | EX_COMPRESSED_BITMAP_HEADER_PRESENT | Indicates that the optional exBitmapDataHeader |
-        //      |               0x01                  | field is present.                              |
-        //      +-------------------------------------+------------------------------------------------+
+        // +-------------------------------------+-----------------------------+
+        // |               Flag                  |    Meaning                  |
+        // +-------------------------------------+-----------------------------+
+        // | EX_COMPRESSED_BITMAP_HEADER_PRESENT | Indicates that the optional |
+        // |               0x01                  | exBitmapDataHeader field    |
+        // |                                     | is present.                 |
+        // +-------------------------------------+-----------------------------+
         //
-        // reserved (1 byte): An 8-bit, unsigned integer. This field is reserved for future use. It MUST be set to
-        //      zero.
-        // codecID (1 byte): An 8-bit, unsigned integer. The client-assigned ID that identifies the bitmap codec
-        //         that was used to encode the bitmap data. Bitmap codec parameters are exchanged in the Bitmap
-        //        Codecs Capability Set (section 2.2.7.2.10). If this field is 0, then the bitmap data is not encoded
-        //        and can be used without performing any decoding transformation.
-        // width (2 bytes): A 16-bit, unsigned integer. The width of the decoded bitmap image in pixels.
-        // height (2 bytes): A 16-bit, unsigned integer. The height of the decoded bitmap image in pixels.
-        // bitmapDataLength (4 bytes): A 32-bit, unsigned integer. The size in bytes of the bitmapData field.
-        // exBitmapDataHeader (variable): An optional Extended Compressed Bitmap Header (section 2.2.9.2.1.1.1) structure
-        //         that contains non essential information associated with bitmap data in the bitmapData field. This field MUST
-        //        be present if the EX_COMPRESSED_BITMAP_HEADER_PRESENT (0x01) flag is present.
-        // bitmapData (variable): A variable-length array of bytes containing bitmap data encoded using the
-        //        codec identified by the ID in the codecID field.
+        // reserved (1 byte): An 8-bit, unsigned integer. This field is reserved
+        //   for future use. It MUST be set to zero.
+        // codecID (1 byte): An 8-bit, unsigned integer. The client-assigned ID
+        //   that identifies the bitmap codec that was used to encode the bitmap
+        //   data. Bitmap codec parameters are exchanged in the Bitmap Codecs
+        //   Capability Set (section 2.2.7.2.10). If this field is 0, then the
+        //   bitmap data is not encoded and can be used without performing any
+        //   decoding transformation.
+        // width (2 bytes): A 16-bit, unsigned integer. The width of the decoded
+        //   bitmap image in pixels.
+        // height (2 bytes): A 16-bit, unsigned integer. The height of the 
+        //   decoded bitmap image in pixels.
+        // bitmapDataLength (4 bytes): A 32-bit, unsigned integer. The size in
+        //   bytes of the bitmapData field.
+        // exBitmapDataHeader (variable): An optional Extended Compressed Bitmap
+        //   Header (section 2.2.9.2.1.1.1) structure that contains non 
+        //   essential information associated with bitmap data in the bitmapData
+        //   field. This field MUST be present if the 
+        //   EX_COMPRESSED_BITMAP_HEADER_PRESENT (0x01) flag is present.
+        // bitmapData (variable): A variable-length array of bytes containing
+        //   bitmap data encoded using the codec identified by the ID in the
+        //   codecID field.
 
         ::check_throw(stream, 10 + 12, "RDPSetSurfaceCommand::recv SetSurfaceBitsCommand", ERR_RDP_DATA_TRUNCATED);
 
@@ -133,9 +155,7 @@ public:
         this->height = stream.in_uint16_le();
         this->bitmapDataLength = stream.in_uint32_le();
 
-        Rect rect(destLeft, destTop, width, height);
-
-        if (flags & EX_COMPRESSED_BITMAP_HEADER_PRESENT) {
+        if (this->flags & EX_COMPRESSED_BITMAP_HEADER_PRESENT) {
 
             ::check_throw(stream, 24, "RDPSetSurfaceCommand::recv SetSurfaceBitsCommand EX_COMPRESSED_BITMAP_HEADER_PRESENT", ERR_RDP_DATA_TRUNCATED);
 
@@ -147,6 +167,7 @@ public:
 
         ::check_throw(stream, bitmapDataLength, "RDPSetSurfaceCommand::recv SetSurfaceBitsCommand bitmapDataLength", ERR_RDP_DATA_TRUNCATED);
 
+        // TODO: Check stream lifespan, we are getting a pointer on the stream inside the object, looks dangerous
         this->bitmapData = stream.get_current();
     }
 
@@ -174,8 +195,17 @@ public:
         stream.out_copy_bytes(this->bitmapData, this->bitmapDataLength);
     }
 
-    static void log(int level, const RDPSurfaceContent &/*content*/) {
-        LOG(level, "RDPSurfaceCommand");
+    void log(int level, bool dump) const {
+        LOG(level, "RDPSurfaceCommand: CMDTYPE_SET_SURFACE_BITS [%s] width=%u heigh=%u bitmapDataLength=%u bpp=%u flags=%.2x codecId=%.2x",
+            this->destRect, this->width, this->height, this->bitmapDataLength,
+            this->bpp, this->flags, this->codecId);
+        if (this->flags & EX_COMPRESSED_BITMAP_HEADER_PRESENT) {
+            LOG(level, "RDPSurfaceCommand:  hUI=%.8x lUI=%.8x tm.s=%lu tm.ms=%lu",
+                this->highUniqueId, this->lowUniqueId, this->tmSeconds, this->tmMilliseconds);
+        }
+        if (dump){
+            hexdump_d(this->bitmapData, this->bitmapDataLength);
+        }
     }
 
 public:
@@ -183,7 +213,8 @@ public:
     uint8_t bpp;
     uint8_t flags;
     uint8_t codecId;
-    uint16_t width, height;
+    uint16_t width;
+    uint16_t height;
 
     uint32_t bitmapDataLength;
     const uint8_t *bitmapData;

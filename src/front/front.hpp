@@ -666,13 +666,15 @@ public:
         }
 
         LOG(LOG_INFO, "RDPSetSurfaceCommand command forwarding");
+        cmd.log(LOG_INFO, false);
 
         RDPSetSurfaceCommand newCmd = cmd;
-        newCmd.codecId = 0;
+        newCmd.codecId = 5; // this->client_info.bitmap_codec_caps.bitmapCodecArray[1].codecID;
         this->orders.graphics_update_pdu().send_set_surface_command(newCmd);
     }
     void draw(RDPSetSurfaceCommand const & cmd, RDPSurfaceContent const & content) override {
-        if (this->client_info.bitmap_codec_caps.haveRemoteFxCodec && cmd.codec == RDPSetSurfaceCommand::SETSURFACE_CODEC_REMOTEFX) {
+        if (this->client_info.bitmap_codec_caps.haveRemoteFxCodec
+        && cmd.codec == RDPSetSurfaceCommand::SETSURFACE_CODEC_REMOTEFX) {
             // only notifies capture callbacks, don't send anything to the front client, it has already been done by
             // a previous draw_impl(RDPSetSurfaceCommand const & cmd) call (with raw blob)
             this->graphics_update->draw(cmd, content);
