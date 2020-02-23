@@ -135,7 +135,7 @@ struct ClientInfo
     GlyphCacheCaps          glyph_cache_caps;
     RailCaps                rail_caps;
     WindowListCaps          window_list_caps;
-    Recv_SC_BitmapCodecCaps bitmap_codec_caps;
+    Recv_CS_BitmapCodecCaps bitmap_codec_caps;
 
     ClientInfo() = default;
 
