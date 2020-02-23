@@ -3221,7 +3221,7 @@ private:
 
                 if (this->ini.get<cfg::client::enable_remotefx>() 
                     && this->client_info.screen_info.bpp == BitsPerPixel{32})  {
-                    CS_BitmapCodecCaps bitmap_codec_caps;
+                    Emit_SC_BitmapCodecCaps bitmap_codec_caps;
                     ScreenInfo &screen_info = this->client_info.screen_info;
                     maxRequestSize = std::max(maxRequestSize, static_cast<uint32_t>(screen_info.width * screen_info.height * 4));
 

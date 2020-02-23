@@ -3562,7 +3562,7 @@ public:
                     }
                 }
 
-                BitmapCodecCaps bitmap_codec_caps{true};
+                Emit_SC_BitmapCodecCaps bitmap_codec_caps;
                 if (this->enable_remotefx && this->haveRemoteFx) {
                     /**
                      * for remoteFx we need:
@@ -5046,12 +5046,12 @@ public:
                 break;
             case CAPSETTYPE_BITMAP_CODECS:
             {
-                BitmapCodecCaps caps{false};
-                caps.recv(stream, capset_length);
+                Recv_SC_BitmapCodecCaps bitmap_codecs_caps;
+                bitmap_codecs_caps.recv(stream, capset_length);
                 if (bool(this->verbose & RDPVerbose::capabilities)) {
-                    caps.log("Receiving from server");
+                    bitmap_codecs_caps.log("Receiving from server");
                 }
-                this->haveRemoteFx = caps.haveRemoteFxCodec;
+                this->haveRemoteFx = bitmap_codecs_caps.haveRemoteFxCodec;
                 if (this->haveRemoteFx){
                     if (bool(this->verbose & RDPVerbose::capabilities)) {
                         LOG(LOG_INFO, "RemoteFx Enabled on server ++++++++++++++++");
