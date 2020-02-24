@@ -320,31 +320,6 @@ enum {
 // TS_BITMAPCODEC, as specified in [MS-RDPBCGR] section 2.2.7.2.10.1.1 Bitmap
 // Codecs Capability Set.
 
-struct RFXSrvrCaps
-{
-    uint16_t len{0};
-
-    RFXSrvrCaps() 
-    {
-    }
-
-    void emit(OutStream & out_stream) const
-    {
-        out_stream.out_clear_bytes(this->len);
-    }
-
-    void recv(InStream & stream, uint16_t len)
-    {
-        stream.in_skip_bytes(len);
-        this->len = len;
-    }
-
-    [[nodiscard]] size_t computeSize() const
-    {
-        return this->len;
-    }
-};
-
 struct RFXICap
 {
     enum {
@@ -502,7 +477,7 @@ struct Emit_CS_BitmapCodec
         out.out_uint16_le(this->codecPropertiesLength);
 
         //byte_ptr props = out.get_current();
-        if (this->codecPropertiesId ==RFXCLNTCAPS){
+        if (this->CodecPropertiesId ==RFXCLNTCAPS){
             uint32_t length{49};
             uint32_t captureFlags{CARDP_CAPS_CAPTURE_NON_CAC};
             uint32_t capsLength{37};
@@ -513,9 +488,9 @@ struct Emit_CS_BitmapCodec
             icapsData[1].entropyBits = CLW_ENTROPY_RLGR3;
 
             /* TS_RFX_CLNT_CAPS_CONTAINER */
-            out.out_uint32_le(this->length);
-            out.out_uint32_le(this->captureFlags);
-            out.out_uint32_le(this->capsLength);
+            out.out_uint32_le(length);
+            out.out_uint32_le(captureFlags);
+            out.out_uint32_le(capsLength);
 
             /* TS_RFX_CAPS */
             out.out_uint16_le(CBY_CAPS); /* blockType */
@@ -536,8 +511,12 @@ struct Emit_CS_BitmapCodec
         }
     }
 
+    size_t computeSize() {
+        return 19u + this->codecPropertiesLength;
+    }
+
     void log() const {
-        unsigned long sz = (this->codecPropertiesId==RFXCLNTCAPS)?49:0;
+        unsigned long sz = this->codecPropertiesLength;
         LOG(LOG_INFO, "  -%s, id=%d, size=%lu codecProperties=%lu", 
                 bitmapCodecTypeStr(this->codecType),
                 this->codecID, 19 + sz, sz);
@@ -594,7 +573,7 @@ struct Emit_CS_BitmapCodecCaps : public Capability {
         return codecsLen;
     }
 
-    void emit(OutStream & out) const {
+    void emit(OutStream & out) {
         size_t codecsLen = 0;
         for (int i = 0; i < this->bitmapCodecCount; i++) {
             codecsLen += this->bitmapCodecArray[i].computeSize();
@@ -1044,7 +1023,7 @@ struct Emit_SC_BitmapCodecCaps : public Capability {
         return codecsLen;
     }
 
-    void emit(OutStream & out, std::vector<uint8_t> supported_codecs) const {
+    void emit(OutStream & out, std::vector<uint8_t> supported_codecs) {
         for (auto codec: supported_codecs){
             this->addCodec(codec);
         }
