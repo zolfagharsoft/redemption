@@ -3572,7 +3572,7 @@ public:
                      *     * a multi_fragment_update that is big enough (at least the value returned by the server)
                      */
                     Emit_CS_BitmapCodecCaps bitmap_codec_caps;
-                    this->remoteFx_codec_id = bitmap_codec_caps.addCodec(CODEC_GUID_REMOTEFX);
+                    this->remoteFx_codec_id = bitmap_codec_caps.addCodec(19, CODEC_GUID_REMOTEFX);
 
                     if (bool(this->verbose & RDPVerbose::capabilities)) {
                         bitmap_codec_caps.log("Sending to server");

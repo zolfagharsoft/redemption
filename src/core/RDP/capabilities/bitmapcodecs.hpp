@@ -536,7 +536,7 @@ struct Emit_CS_BitmapCodecCaps : public Capability {
     : Capability(CAPSETTYPE_BITMAP_CODECS, CAPLEN_BITMAP_CODECS_CAPS)
     {}
 
-    uint8_t addCodec(uint8_t codecType) {
+    uint8_t addCodec(uint8_t codec_id, uint8_t codecType) {
         uint8_t ret = 1;
 
         switch(codecType) {
@@ -544,7 +544,7 @@ struct Emit_CS_BitmapCodecCaps : public Capability {
         case CODEC_GUID_IMAGE_REMOTEFX: {
             Emit_CS_BitmapCodec *codec = &this->bitmapCodecArray[this->bitmapCodecCount];
             codec->setCodecGUID(codecType);
-            ret = codec->codecID = this->codecCounter;
+            ret = codec->codecID = codec_id;
             this->haveRemoteFxCodec = true;
             this->bitmapCodecCount++;
             this->codecCounter++;
