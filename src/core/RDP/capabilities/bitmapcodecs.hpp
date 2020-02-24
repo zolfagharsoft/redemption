@@ -457,30 +457,61 @@ struct Emit_CS_BitmapCodec
 
     BitmapCodecType codecType{CODEC_UNKNOWN};
 
-    struct RFXNoCaps
-    {
-        static void emit(OutStream & /*out*/) {}
-        static void recv(InStream & /*stream*/, uint16_t /*len*/) {}
-        [[nodiscard]] static size_t computeSize() { return 0; }
+    enum {
+        RFXNOCAPS,
+        RFXCLNTCAPS
     };
 
+    uint8_t CodecPropertiesId;
 
-    struct Emit_RFXClntCaps
+    Emit_CS_BitmapCodec() = default;
+
+    void setCodecGUID(uint8_t codecGUID)
     {
-        uint32_t length{49};
-        uint32_t captureFlags{CARDP_CAPS_CAPTURE_NON_CAC};
-        uint32_t capsLength{37};
+        this->codecPropertiesLength = 0;
+        switch(codecGUID) {
+        case CODEC_GUID_NSCODEC:
+            memcpy(this->codecGUID, "\xB9\x1B\x8D\xCA\x0F\x00\x4F\x15\x58\x9F\xAE\x2D\x1A\x87\xE2\xD6", 16);
+            this->codecID = 1;
+            this->codecType = CODEC_NS;
+            this->CodecPropertiesId = RFXNOCAPS;
+            break;
+        case CODEC_GUID_REMOTEFX:
+            memcpy(this->codecGUID, "\x12\x2F\x77\x76\x72\xBD\x63\x44\xAF\xB3\xB7\x3C\x9C\x6F\x78\x86", 16);
+            this->CodecPropertiesId = RFXCLNTCAPS;
+            this->codecType = CODEC_REMOTEFX;
+            this->codecPropertiesLength = 49;
+            break;
+        case CODEC_GUID_IMAGE_REMOTEFX:
+            memcpy(this->codecGUID, "\xD4\xCC\x44\x27\x8A\x9D\x74\x4E\x80\x3C\x0E\xCB\xEE\xA1\x9C\x54", 16);
+            this->CodecPropertiesId = RFXCLNTCAPS;
+            this->codecType = CODEC_REMOTEFX;
+            this->codecPropertiesLength = 49;
+            break;
+        default:
+            memset(this->codecGUID, 0, 16);
+            this->codecType = CODEC_UNKNOWN;
+            this->CodecPropertiesId = RFXNOCAPS;
+            break;
+        }
+    }
 
-        std::vector<RFXICap> icapsData{RFXICap{}};
+    void emit(OutStream & out) const {
+        out.out_copy_bytes(this->codecGUID, 16);
+        out.out_uint8(this->codecID);
+        out.out_uint16_le(this->codecPropertiesLength);
 
-        Emit_RFXClntCaps() {
+        //byte_ptr props = out.get_current();
+        if (this->codecPropertiesId ==RFXCLNTCAPS){
+            uint32_t length{49};
+            uint32_t captureFlags{CARDP_CAPS_CAPTURE_NON_CAC};
+            uint32_t capsLength{37};
+
+            std::vector<RFXICap> icapsData{RFXICap{}};
             icapsData.resize(2);
             icapsData[0].entropyBits = CLW_ENTROPY_RLGR1;
             icapsData[1].entropyBits = CLW_ENTROPY_RLGR3;
-        }
 
-        void emit(OutStream & out) const
-        {
             /* TS_RFX_CLNT_CAPS_CONTAINER */
             out.out_uint32_le(this->length);
             out.out_uint32_le(this->captureFlags);
@@ -503,105 +534,13 @@ struct Emit_CS_BitmapCodec
                 cap.emit(out);
             }
         }
-
-        [[nodiscard]] size_t computeSize() const {
-            return this->length;
-        }
-    };
-
-    struct Emit_NSCodecCaps
-    {
-        uint8_t fAllowDynamicFidelity{0}; // true/false
-        uint8_t fAllowSubsampling{0};     // true/false
-        uint8_t colorLossLevel{1};        // Between 1 and 7
-
-        Emit_NSCodecCaps() = default;
-
-        void emit(OutStream & out) const
-        {
-            out.out_uint8(this->fAllowDynamicFidelity);
-            out.out_uint8(this->fAllowSubsampling);
-            out.out_uint8(this->colorLossLevel);
-        }
-
-        [[nodiscard]]
-        static size_t computeSize()
-        {
-            return 3;
-        }
-    };
-
-
-    struct CodecProperties
-    {
-        void emit(OutStream & out) const
-        {
-            auto f = [&](auto& caps) -> void { caps.emit(out); };
-            std::visit(f, this->interface);
-        }
-
-        [[nodiscard]] size_t computeSize() const
-        {
-            auto f = [](auto& caps) -> size_t { return caps.computeSize(); };
-            return std::visit(f, this->interface);
-        }
-
-        std::variant<RFXNoCaps, Emit_RFXClntCaps, Emit_NSCodecCaps> interface;
-    };
-
-    CodecProperties codecProperties;
-
-    Emit_CS_BitmapCodec() = default;
-
-    void setCodecGUID(uint8_t codecGUID)
-    {
-        switch(codecGUID) {
-        case CODEC_GUID_NSCODEC:
-            memcpy(this->codecGUID, "\xB9\x1B\x8D\xCA\x0F\x00\x4F\x15\x58\x9F\xAE\x2D\x1A\x87\xE2\xD6", 16);
-            this->codecID = 1;
-            this->codecType = CODEC_NS;
-            this->codecProperties.interface = RFXNoCaps{};
-            break;
-        case CODEC_GUID_REMOTEFX:
-            memcpy(this->codecGUID, "\x12\x2F\x77\x76\x72\xBD\x63\x44\xAF\xB3\xB7\x3C\x9C\x6F\x78\x86", 16);
-            this->codecProperties.interface = Emit_RFXClntCaps();
-            this->codecType = CODEC_REMOTEFX;
-            break;
-        case CODEC_GUID_IMAGE_REMOTEFX:
-            memcpy(this->codecGUID, "\xD4\xCC\x44\x27\x8A\x9D\x74\x4E\x80\x3C\x0E\xCB\xEE\xA1\x9C\x54", 16);
-            this->codecProperties.interface = Emit_RFXClntCaps();
-            this->codecType = CODEC_REMOTEFX;
-            break;
-        default:
-            memset(this->codecGUID, 0, 16);
-            this->codecType = CODEC_UNKNOWN;
-            this->codecProperties.interface = RFXNoCaps{};
-            break;
-        }
-
-        this->codecPropertiesLength = this->codecProperties.computeSize();
-    }
-
-    [[nodiscard]] size_t computeSize() const {
-        return 19u + this->codecProperties.computeSize();
-    }
-
-    void emit(OutStream & out) const {
-        out.out_copy_bytes(this->codecGUID, 16);
-        out.out_uint8(this->codecID);
-        out.out_uint16_le(this->codecPropertiesLength);
-
-        //byte_ptr props = out.get_current();
-        this->codecProperties.emit(out);
-
-        //LOG(LOG_ERR, "codecProperties:");
-        //hexdump(props, this->codecPropertiesLength);
     }
 
     void log() const {
+        unsigned long sz = (this->codecPropertiesId==RFXCLNTCAPS)?49:0;
         LOG(LOG_INFO, "  -%s, id=%d, size=%lu codecProperties=%lu", 
                 bitmapCodecTypeStr(this->codecType),
-                this->codecID, this->computeSize(), this->codecProperties.computeSize());
+                this->codecID, 19 + sz, sz);
     }
 };
 
