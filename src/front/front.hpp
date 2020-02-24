@@ -3225,8 +3225,8 @@ private:
                     ScreenInfo &screen_info = this->client_info.screen_info;
                     maxRequestSize = std::max(maxRequestSize, static_cast<uint32_t>(screen_info.width * screen_info.height * 4));
 
-                    bitmap_codec_caps.addCodec(CODEC_GUID_REMOTEFX);
-                    bitmap_codec_caps.emit(stream);
+                    std::vector<uint8_t> supported_codecs = {CODEC_GUID_REMOTEFX};
+                    bitmap_codec_caps.emit(stream, supported_codecs);
 
                     if (bool(this->verbose)) {
                         bitmap_codec_caps.log("Front::send_demand_active: Sending to client");

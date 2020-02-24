@@ -1005,6 +1005,7 @@ struct Emit_SC_BitmapCodecCaps : public Capability {
     : Capability(CAPSETTYPE_BITMAP_CODECS, CAPLEN_BITMAP_CODECS_CAPS)
     {}
 
+    private:
     uint8_t addCodec(uint8_t codecType) {
         uint8_t ret = 1;
 
@@ -1033,6 +1034,7 @@ struct Emit_SC_BitmapCodecCaps : public Capability {
         return ret;
     }
 
+    public:
     size_t computeCodecsSize() {
         size_t codecsLen = 0;
         for (int i = 0; i < this->bitmapCodecCount; i++) {
@@ -1042,7 +1044,11 @@ struct Emit_SC_BitmapCodecCaps : public Capability {
         return codecsLen;
     }
 
-    void emit(OutStream & out) const {
+    void emit(OutStream & out, std::vector<uint8_t> supported_codecs) const {
+        for (auto codec: supported_codecs){
+            this->addCodec(codec);
+        }
+    
         size_t codecsLen = 0;
         for (int i = 0; i < this->bitmapCodecCount; i++) {
             codecsLen += this->bitmapCodecArray[i].computeSize();

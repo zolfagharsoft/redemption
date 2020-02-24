@@ -3562,7 +3562,6 @@ public:
                     }
                 }
 
-                Emit_CS_BitmapCodecCaps bitmap_codec_caps;
                 if (this->enable_remotefx && this->haveRemoteFx) {
                     /**
                      * for remoteFx we need:
@@ -3572,6 +3571,7 @@ public:
                      *     * largePointer
                      *     * a multi_fragment_update that is big enough (at least the value returned by the server)
                      */
+                    Emit_CS_BitmapCodecCaps bitmap_codec_caps;
                     this->remoteFx_codec_id = bitmap_codec_caps.addCodec(CODEC_GUID_REMOTEFX);
 
                     if (bool(this->verbose & RDPVerbose::capabilities)) {
