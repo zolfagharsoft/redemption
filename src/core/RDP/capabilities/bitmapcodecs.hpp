@@ -622,6 +622,52 @@ struct Emit_CS_BitmapCodec
         [[nodiscard]] static size_t computeSize() { return 0; }
     };
 
+
+    struct Emit_RFXClntCaps
+    {
+        uint32_t length{49};
+        uint32_t captureFlags{CARDP_CAPS_CAPTURE_NON_CAC};
+        uint32_t capsLength{37};
+
+        std::vector<RFXICap> icapsData{RFXICap{}};
+
+        Emit_RFXClntCaps() {
+            icapsData.resize(2);
+            icapsData[0].entropyBits = CLW_ENTROPY_RLGR1;
+            icapsData[1].entropyBits = CLW_ENTROPY_RLGR3;
+        }
+
+        void emit(OutStream & out) const
+        {
+            /* TS_RFX_CLNT_CAPS_CONTAINER */
+            out.out_uint32_le(this->length);
+            out.out_uint32_le(this->captureFlags);
+            out.out_uint32_le(this->capsLength);
+
+            /* TS_RFX_CAPS */
+            out.out_uint16_le(CBY_CAPS); /* blockType */
+            out.out_uint32_le(8);        /* blockLen */
+            out.out_uint16_le(1);         /* numCapsets */
+
+            /* TS_RFX_CAPSET */
+            out.out_uint16_le(CBY_CAPSET); /* blockType */
+            out.out_uint32_le(29); /* blockLen */
+            out.out_uint8(0x01); /* codecId (MUST be set to 0x01) */
+            out.out_uint16_le(CLY_CAPSET); /* capsetType */
+            out.out_uint16_le(icapsData.size()); /* numIcaps */
+            out.out_uint16_le(8); /* icapLen */
+
+            for (RFXICap const& cap : icapsData) {
+                cap.emit(out);
+            }
+        }
+
+        [[nodiscard]] size_t computeSize() const {
+            return this->length;
+        }
+    };
+
+
     struct CodecProperties
     {
         void emit(OutStream & out) const
@@ -636,7 +682,7 @@ struct Emit_CS_BitmapCodec
             return std::visit(f, this->interface);
         }
 
-        std::variant<RFXNoCaps, RFXClntCaps, RFXSrvrCaps, NSCodecCaps> interface;
+        std::variant<RFXNoCaps, Emit_RFXClntCaps, NSCodecCaps> interface;
     };
 
     CodecProperties codecProperties;
@@ -654,12 +700,12 @@ struct Emit_CS_BitmapCodec
             break;
         case CODEC_GUID_REMOTEFX:
             memcpy(this->codecGUID, "\x12\x2F\x77\x76\x72\xBD\x63\x44\xAF\xB3\xB7\x3C\x9C\x6F\x78\x86", 16);
-            this->codecProperties.interface = RFXClntCaps();
+            this->codecProperties.interface = Emit_RFXClntCaps();
             this->codecType = CODEC_REMOTEFX;
             break;
         case CODEC_GUID_IMAGE_REMOTEFX:
             memcpy(this->codecGUID, "\xD4\xCC\x44\x27\x8A\x9D\x74\x4E\x80\x3C\x0E\xCB\xEE\xA1\x9C\x54", 16);
-            this->codecProperties.interface = RFXClntCaps();
+            this->codecProperties.interface = Emit_RFXClntCaps();
             this->codecType = CODEC_REMOTEFX;
             break;
         default:
