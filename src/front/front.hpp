@@ -668,9 +668,9 @@ public:
         LOG(LOG_INFO, "RDPSetSurfaceCommand command forwarding");
         cmd.log(LOG_INFO, false);
 
-        RDPSetSurfaceCommand newCmd = cmd;
-        newCmd.codecId = 5; // this->client_info.bitmap_codec_caps.bitmapCodecArray[1].codecID;
-        this->orders.graphics_update_pdu().send_set_surface_command(newCmd);
+//        RDPSetSurfaceCommand newCmd = cmd;
+//        newCmd.codecId = 5; // this->client_info.bitmap_codec_caps.bitmapCodecArray[1].codecID;
+        this->orders.graphics_update_pdu().send_set_surface_command(cmd);
     }
     void draw(RDPSetSurfaceCommand const & cmd, RDPSurfaceContent const & content) override {
         if (this->client_info.bitmap_codec_caps.haveRemoteFxCodec

@@ -1798,6 +1798,7 @@ class mod_rdp : public mod_api, public rdp_api
 
     const bool disconnect_on_logon_user_change;
     const RdpLogonInfo logon_info;
+    const Recv_CS_BitmapCodecCaps & front_bitmap_codec_caps;
 
     std::array<uint8_t, 28>& server_auto_reconnect_packet_ref;
 
@@ -1856,7 +1857,7 @@ class mod_rdp : public mod_api, public rdp_api
     const bool enable_remotefx;
     bool haveRemoteFx{false};
     bool haveSurfaceFrameAck{false};
-    uint8_t remoteFx_codec_id;
+    std::vector<uint8_t> remoteFx_codec_id;
 
     const PrimaryDrawingOrdersSupport primary_drawing_orders_support;
 
@@ -1969,6 +1970,7 @@ public:
         , redir_info(redir_info)
         , disconnect_on_logon_user_change(mod_rdp_params.disconnect_on_logon_user_change)
         , logon_info(info.hostname, mod_rdp_params.hide_client_name, mod_rdp_params.target_user, mod_rdp_params.split_domain)
+        , front_bitmap_codec_caps(info.bitmap_codec_caps)
         , server_auto_reconnect_packet_ref(mod_rdp_params.server_auto_reconnect_packet_ref)
         , monitor_count(mod_rdp_params.allow_using_multiple_monitors ? info.cs_monitor.monitorCount : 0)
         , trans(trans)
@@ -2524,7 +2526,7 @@ public:
 
                 setSurface.recv(stream);
 
-                if (setSurface.codecId == this->remoteFx_codec_id) {
+                if (std::find(this->remoteFx_codec_id.begin(), this->remoteFx_codec_id.end(), setSurface.codecId) != this->remoteFx_codec_id.end()) {
                     LOG_IF(bool(this->verbose & RDPVerbose::surfaceCmd), LOG_INFO, "setSurfaceBits: remoteFX codec");
                     setSurface.codec = RDPSetSurfaceCommand::SETSURFACE_CODEC_REMOTEFX;
 
@@ -3572,7 +3574,34 @@ public:
                      *     * a multi_fragment_update that is big enough (at least the value returned by the server)
                      */
                     Emit_CS_BitmapCodecCaps bitmap_codec_caps;
-                    this->remoteFx_codec_id = bitmap_codec_caps.addCodec(19, CODEC_GUID_REMOTEFX);
+                    
+                    if (this->front_bitmap_codec_caps.haveRemoteFxCodec) {
+                        for (uint8_t i = 0 ; i < this->front_bitmap_codec_caps.bitmapCodecCount ; i++){
+                            if (this->front_bitmap_codec_caps.bitmapCodecArray[i].codecType == CODEC_REMOTEFX){
+                                auto id = this->front_bitmap_codec_caps.bitmapCodecArray[i].codecID;
+                                auto codecGUID = this->front_bitmap_codec_caps.bitmapCodecArray[i].codecGUID;
+                                // CODEC_GUID_IMAGE_REMOTEFX
+                                if (memcmp(codecGUID, "\x12\x2F\x77\x76\x72\xBD\x63\x44\xAF\xB3\xB7\x3C\x9C\x6F\x78\x86", 16) == 0) {
+                                    bitmap_codec_caps.addCodec(id, CODEC_GUID_IMAGE_REMOTEFX);
+                                    this->remoteFx_codec_id.push_back(id);
+                                } else 
+                                // CODEC_GUID_REMOTEFX
+                                if(memcmp(codecGUID, "\xD4\xCC\x44\x27\x8A\x9D\x74\x4E\x80\x3C\x0E\xCB\xEE\xA1\x9C\x54", 16) == 0) {
+                                    bitmap_codec_caps.addCodec(id, CODEC_GUID_REMOTEFX);
+                                    this->remoteFx_codec_id.push_back(id);
+                                } else {
+                                    // CODEC_REMOTEFX: "\xA6\x51\x43\x9C\x35\x35\xAE\x42\x91\x0C\xCD\xFC\xE5\x76\x0B\x58"
+                                    // NSCODEC: "\xB9\x1B\x8D\xCA\x0F\x00\x4F\x15\x58\x9F\xAE\x2D\x1A\x87\xE2\xD6"
+                                }
+                            }
+                        }
+                    }
+                    else {
+                        bitmap_codec_caps.addCodec(3, CODEC_GUID_REMOTEFX);
+                        this->remoteFx_codec_id.push_back(3);
+                        bitmap_codec_caps.addCodec(5, CODEC_GUID_IMAGE_REMOTEFX);
+                        this->remoteFx_codec_id.push_back(5);
+                    }
 
                     if (bool(this->verbose & RDPVerbose::capabilities)) {
                         bitmap_codec_caps.log("Sending to server");
