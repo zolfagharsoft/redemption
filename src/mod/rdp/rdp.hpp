@@ -3562,7 +3562,7 @@ public:
                     }
                 }
 
-                Emit_SC_BitmapCodecCaps bitmap_codec_caps;
+                Emit_CS_BitmapCodecCaps bitmap_codec_caps;
                 if (this->enable_remotefx && this->haveRemoteFx) {
                     /**
                      * for remoteFx we need:
