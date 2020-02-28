@@ -261,7 +261,6 @@ class Sesman():
                 elif (_data[key][:1] == u'!'):
                     _data[key] = _data[key][1:]
                 else:
-                    # _data[key] unchanged
                     pass
             self.shared.update(_data)
 
@@ -298,7 +297,6 @@ class Sesman():
                        , u'password': u'x509'
                        , u'module' : u'confirm'
                        , u'display_message': MAGICASK
-                       # , u'accept_message': u''
                       })
 
         self.send_data(data_to_send)
@@ -337,9 +335,6 @@ class Sesman():
 
     def interactive_accept_message(self, data_to_send):
         data_to_send.update({ u'module'        : u'valid'
-                            # , u'proto_dest'    : u'INTERNAL'
-                            # , u'accept_message': MAGICASK
-                            # , u'display_message': u''
                             })
         self.send_data(data_to_send)
 
