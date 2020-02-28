@@ -183,8 +183,6 @@ class Sesman():
             SESMANCONF.language = self.language
 
             data[u'language'] = SESMANCONF.language
-            # if self.shared.get(u'password') == MAGICASK:
-            #     data[u'password'] = u''
 
             data.update(translations())
 
