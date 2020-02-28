@@ -228,8 +228,6 @@ class Sesman():
         except AuthentifierSocketClosed, e:
             raise
         except Exception, e:
-#            import traceback
-#            Logger().info("%s <<<%s>>>" % (u"Failed to read data from rdpproxy authentifier socket", traceback.format_exc(e)))
             raise AuthentifierSocketClosed()
 
         if _status:
