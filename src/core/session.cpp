@@ -392,37 +392,20 @@ private:
         mod_wrapper.set_mod(next_state, mod_pack);
     }
 
-    bool front_up_and_running(AclSerializer & acl_serial,
+    bool next_backend_module(AclSerializer & acl_serial,
                               SessionLogFile & log_file, Inifile& ini,
                               ModFactory & mod_factory, ModWrapper & mod_wrapper,
                               Front & front,
                               Sesman & sesman,
                               ClientExecute & rail_client_execute)
     {
-        // There are modified fields to send to sesman
-        if (!acl_serial.is_connected() || !acl_serial.remote_answer){
-            return true;
-        }
-
-        acl_serial.remote_answer = false;
-
         auto & module_cstr = ini.get<cfg::context::module>();
-
-        if (not module_cstr[0]){
-            return true;
-        }
-
         auto next_state = get_module_id(module_cstr);
-
-        if (mod_wrapper.current_mod != MODULE_INTERNAL_TRANSITION
-        && next_state != MODULE_TRANSITORY) {
-            return true;
-        }
 
         switch (next_state){
         case MODULE_TRANSITORY: // NO MODULE CHANGE INFO YET, ASK MORE FROM ACL
         {
-            // In case of transitory we are still expecting spontaneous data
+            // In case of transitory we are still expecting spontaneous data from sesman
             acl_serial.remote_answer = true;
             auto next_state = MODULE_INTERNAL_TRANSITION;
             this->new_mod(next_state, mod_wrapper, mod_factory, front);
@@ -876,11 +859,6 @@ public:
                     sesman.flush_acl(bool(ini.get<cfg::debug::session>()&0x04));
                     // send over wire if any field changed
                     if (this->ini.changed_field_size()) {
-                        auto signal = mod_wrapper.get_mod_signal();
-                        LOG_IF(bool(ini.get<cfg::debug::session>()&0x08), LOG_INFO,
-                                "signal is %s", (signal==BACK_EVENT_NEXT)?"NEXT":
-                                                (signal==BACK_EVENT_STOP)?"STOP":
-                                                "NONE");
                         for (auto field : this->ini.get_fields_changed()) {
                                zstring_view key = field.get_acl_name();
                                LOG_IF(bool(ini.get<cfg::debug::session>()&0x08), LOG_INFO,
@@ -1018,7 +996,6 @@ public:
                             mod_wrapper.disconnect();
                             auto next_state = MODULE_INTERNAL_CLOSE_BACK;
                             if (acl_serial.is_connected()){
-                                auto signal = mod_wrapper.get_mod_signal();
                                 for (auto field : this->ini.get_fields_changed()) {
                                         zstring_view key = field.get_acl_name();
 
@@ -1063,12 +1040,16 @@ public:
                             this->new_mod(next_state, mod_wrapper, mod_factory, front);
                         }
 
-
                         if (mod_wrapper.current_mod == MODULE_INTERNAL_TRANSITION) {
-                            run_session = this->front_up_and_running(
+                            // There are modified fields to send to sesman
+                            if (acl_serial.is_connected() && acl_serial.remote_answer){
+                                acl_serial.remote_answer = false;
+
+                                run_session = this->next_backend_module(
                                                     acl_serial, log_file, ini,
                                                     mod_factory, mod_wrapper, front,
                                                     sesman, rail_client_execute);
+                            }
 
                         }
 
