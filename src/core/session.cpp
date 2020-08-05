@@ -75,17 +75,6 @@ class Session
         bool connected;
 
     public:
-        REDEMPTION_VERBOSE_FLAGS(private, verbose)
-        {
-            none,
-            state    = 0x10,
-            arcsight = 0x20,
-
-            // SocketTransport (see 'socket_transport.hpp')
-            sock_basic = 1u << 29,
-            sock_dump  = 1u << 30,
-            sock_watch = 1u << 31
-        };
 
         KeepAlive(std::chrono::seconds grace_delay_, Verbose verbose)
         : grace_delay(grace_delay_.count())
@@ -191,11 +180,6 @@ class Session
         void update_inactivity_timeout(std::chrono::seconds timeout)
         {
             this->inactivity_timeout = std::max<time_t>(timeout.count(), 30);
-        }
-
-        time_t get_inactivity_timeout()
-        {
-            return this->inactivity_timeout;
         }
     };
 
@@ -308,6 +292,11 @@ private:
                 this->ini.set<cfg::context::auth_error_message>(local_err_msg(e, language(ini)));
                 return 1;
             }
+        }
+        else if (e.id == ERR_MCS_APPID_IS_MCS_DPUM) {
+            LOG(LOG_INFO, "Target Logout");
+            this->ini.set<cfg::context::auth_error_message>(TR(trkeys::session_out_time, language(this->ini)));
+            return 1;
         }
         else if (e.id == ERR_SESSION_CLOSE_ENDDATE_REACHED){
             LOG(LOG_INFO, "Close because disconnection time reached");
@@ -1027,12 +1016,11 @@ public:
                             ini.get<cfg::context::module>()
                             );
 
-                        BackEvent_t signal = mod_wrapper.get_mod_signal();
-                        if (signal == BACK_EVENT_STOP){
+                        if (mod_wrapper.get_mod_signal() == BACK_EVENT_STOP){
                             throw Error(ERR_UNEXPECTED);
                         }
 
-                        if (signal == BACK_EVENT_NEXT){
+                        if (mod_wrapper.get_mod_signal() == BACK_EVENT_NEXT){
                             rail_client_execute.enable_remote_program(
                                             front.client_info.remote_program);
                             log_proxy::set_user(this->ini.get<cfg::globals::auth_user>().c_str());
