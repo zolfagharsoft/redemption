@@ -3,6 +3,7 @@
 <!-- Future branch: [![Build Status from future](https://travis-ci.org/wallix/redemption.svg?branch=future)](https://travis-ci.org/wallix/redemption) -->
 woot
 wiit
+waat
 
 A RDP (Remote Desktop Protocol) proxy.
 
