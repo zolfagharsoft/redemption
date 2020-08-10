@@ -44,7 +44,7 @@ REDEMPTION_VERBOSE_FLAGS_DEF(VNCVerbose)
     raw_trace       = 0x00010000,
     copyrect_encoder= 0x00020000,
     copyrect_trace  = 0x00040000,
-
     keymap          = 0x00080000,
+    security        = 0x00100000,
 };
 

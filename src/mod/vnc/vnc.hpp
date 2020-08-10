@@ -420,8 +420,9 @@ public:
             {
                 case State::Size:
                     this->state = this->read_size(buf);
-                    if (this->state != State::Data)
+                    if (this->state != State::Data){
                         return false;
+                    }
                     REDEMPTION_CXX_FALLTHROUGH;
                 case State::Data:
                     this->state = this->read_data(buf, f);
@@ -815,7 +816,13 @@ public:
             vnc.blue_shift = stream.in_uint8();
             stream.in_skip_bytes(3); // skip padding
 
-            // LOG(LOG_INFO, "VNC received: width=%d height=%d bpp=%d depth=%d endianess=%d true_color=%d red_max=%d green_max=%d blue_max=%d red_shift=%d green_shift=%d blue_shift=%d", this->width, this->height, this->bpp, this->depth, this->endianess, this->true_color_flag, this->red_max, this->green_max, this->blue_max, this->red_shift, this->green_shift, this->blue_shift);
+            LOG_IF(bool(vnc.verbose & VNCVerbose::connection),
+                LOG_INFO, "VNC received: width=%d height=%d bpp=%d depth=%d endianess=%d"
+                          " true_color=%d red_max=%d green_max=%d blue_max=%d"
+                          " red_shift=%d green_shift=%d blue_shift=%d",
+                    vnc.width, vnc.height, vnc.bpp, vnc.depth, vnc.endianess,
+                    vnc.true_color_flag, vnc.red_max, vnc.green_max, vnc.blue_max,
+                    vnc.red_shift, vnc.green_shift, vnc.blue_shift);
 
             this->lg = stream.in_uint32_be();
 
@@ -1114,10 +1121,8 @@ private:
 
     bool draw_event_impl(gdi::GraphicApi & gd);
 
-private:
     void check_timeout();
 
-private:
     struct FrameBufferUpdateCtx
     {
         enum class State
