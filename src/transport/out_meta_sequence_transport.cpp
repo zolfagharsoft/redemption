@@ -39,9 +39,10 @@ OutMetaSequenceTransport::WrmFGen::WrmFGen(
     assert(0 != strcmp(prefix, hash_prefix));
 
     if (!utils::strbcpy(this->path, prefix)
-        || !utils::strbcpy(this->hash_path, hash_prefix)
-        || !utils::strbcpy(this->filename, filename)
-        || !utils::strbcpy(this->extension, extension)) {
+     || !utils::strbcpy(this->hash_path, hash_prefix)
+     || !utils::strbcpy(this->filename, filename)
+     || !utils::strbcpy(this->extension, extension)
+    ) {
         LOG(LOG_ERR, "Filename too long");
         throw Error(ERR_TRANSPORT);
     }
@@ -88,7 +89,7 @@ OutMetaSequenceTransport::OutMetaSequenceTransport(
     const int groupid,
     AuthApi * sesman,
     uint32_t file_permissions)
-: meta_buf_encrypt_transport(cctx, rnd, fstat, 
+: meta_buf_encrypt_transport(cctx, rnd, fstat,
     [&sesman](const Error & error){
         if (sesman && error.errnum == ENOSPC) {
             // error.id = ERR_TRANSPORT_WRITE_NO_ROOM;
