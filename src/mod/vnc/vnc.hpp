@@ -1754,6 +1754,9 @@ private:
     void draw_tile(Rect rect, const uint8_t * raw, gdi::GraphicApi & drawable);
 
 public:
+
+    bool server_error_encountered() const override { return false; }
+
     void disconnect() override;
 
     [[nodiscard]] Dimension get_dim() const override

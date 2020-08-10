@@ -626,6 +626,13 @@
           "description": "For targets running WALLIX BestSafe only."
         },
         {
+          "name": "auto_reconnection_on_losing_target_link",
+          "type": "bool",
+          "default": false,
+          "advanced": true,
+          "description": ""
+        },
+        {
           "name": "outbound_connection_monitoring_rules",
           "type": "string",
           "default": "",

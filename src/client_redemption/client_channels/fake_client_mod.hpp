@@ -79,7 +79,7 @@ public:
             this->index_in++;
         }
     }
-    
+
     void create_shadow_session(const char * /*userdata*/, const char * /*type*/) override {}
     void send_auth_channel_data(const char * /*data*/) override {}
     void send_checkout_channel_data(const char * /*data*/) override {}
@@ -103,6 +103,8 @@ public:
     void rdp_input_invalidate(Rect r) override { (void) r; }
 
     void refresh(Rect clip) override { (void) clip; }
+
+    bool server_error_encountered() const { return false; }
 };
 
 
@@ -320,7 +322,7 @@ public:
     const CHANNELS::ChannelDefArray & get_channel_list() const override { return this->channels;}
     ResizeResult server_resize(ScreenInfo /*screen_server*/) override { return ResizeResult::instant_done;}
     int wait_and_draw_event(std::chrono::milliseconds /*timeout*/) override { return 0; }
-    
+
     void session_update(timeval /*now*/, LogId /*id*/, KVList /*kv_list*/) override {}
     void possible_active_window_change() override {}
 
