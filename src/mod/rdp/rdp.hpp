@@ -1009,10 +1009,9 @@ public:
 
     void process_checkout_event(
         const CHANNELS::ChannelDef & checkout_channel,
-        InStream & stream, uint32_t length, uint32_t flags, size_t chunk_size) {
-        (void)length;
-        (void)chunk_size;
-        assert(stream.in_remain() == chunk_size);
+        InStream & stream, uint32_t /* length*/, uint32_t flags, size_t chunk_size) {
+
+        ::check_exact_throw(stream, chunk_size, "mod_rdp::process_checkout_event(0)", ERR_RDP_DATA_TRUNCATED);
 
         if ((flags & (CHANNELS::CHANNEL_FLAG_FIRST | CHANNELS::CHANNEL_FLAG_LAST)) !=
             (CHANNELS::CHANNEL_FLAG_FIRST | CHANNELS::CHANNEL_FLAG_LAST))
@@ -1022,12 +1021,13 @@ public:
         }
 
         // Version(2) + DataLength(2)
-        ::check_throw(stream, 4, "mod_rdp::process_checkout_event", ERR_RDP_DATA_TRUNCATED);
+        ::check_exact_throw(stream, 4, "mod_rdp::process_checkout_event(1)", ERR_RDP_DATA_TRUNCATED);
 
         uint16_t const version = stream.in_uint16_le();
+        (void)version;
         uint16_t const data_length = stream.in_uint16_le();
 
-//        assert(stream.in_remain() == data_length);
+        ::check_throw(stream, data_length, "mod_rdp::process_checkout_event(2)", ERR_RDP_DATA_TRUNCATED);
 
         this->checkout_channel_flags  = flags;
         this->checkout_channel_chanid = checkout_channel.chanid;
@@ -3587,7 +3587,7 @@ public:
                         statedescr);
                     throw Error(ERR_SESSION_UNKNOWN_BACKEND);
                 }
-                
+
                 this->set_mod_signal(BACK_EVENT_NEXT);
 //                throw Error(ERR_BACK_EVENT_NEXT);
             }

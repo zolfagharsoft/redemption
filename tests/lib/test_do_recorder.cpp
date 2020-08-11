@@ -886,7 +886,7 @@ RED_AUTO_TEST_CASE_WD(TestRecorderWrm1, wd)
     }
 
     {
-        std::string expected = "v2\n\n\noutput_base.mwrm 235 ";
+        std::string expected = "v2\n\n\noutput_base.mwrm ";
         auto content = RED_CHECK_GET_FILE_CONTENTS(hash_wd.add_file("output_base.mwrm"));
         content.resize(std::min(expected.size(), content.size()));
         RED_TEST(content == ut::ascii(expected));

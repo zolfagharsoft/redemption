@@ -28,7 +28,15 @@
 inline void check_throw(const InStream & stream, size_t expected, const char * message, error_type eid)
 {
     if (!stream.in_check_rem(expected)) {
-        LOG(LOG_ERR, "Truncated %s: expected=%zu remains=%zu", message, expected, stream.in_remain());
+        LOG(LOG_ERR, "Size mismatch %s: expected=%zu remains=%zu", message, expected, stream.in_remain());
+        throw Error(eid);
+    }
+}
+
+inline void check_exact_throw(const InStream & stream, size_t expected, const char * message, error_type eid)
+{
+    if (stream.in_remain() == expected) {
+        LOG(LOG_ERR, "Size mismatch %s: expected=%zu remains=%zu", message, expected, stream.in_remain());
         throw Error(eid);
     }
 }
@@ -46,5 +54,4 @@ inline uint16_t in_uint16_le_throw(InStream & stream, const char * message, erro
     ::check_throw(stream, 2, message, eid);
     return stream.in_uint16_le();
 }
-
 
