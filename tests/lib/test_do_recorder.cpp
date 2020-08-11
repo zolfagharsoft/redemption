@@ -862,9 +862,8 @@ RED_AUTO_TEST_CASE_WD(TestRecorderWrm1, wd)
         "redrec",
         "-i",
             FIXTURES_PATH "/verifier/recorded/"
-            "SESSIONID-2020-08-10T141428.674981,"
-            "rec@127.0.0.1,Administrator@win10_2,"
-            "20200810-141428,jpoelen-mini,4420.mwrm",
+            "SESSIONID-0000,k@127.0.0.1,cgrosjean@win10cgr_no_probe"
+            ",20200810-165815,kriss-Latitude-E6430,4988.mwrm",
         "--mwrm-path", FIXTURES_PATH "/verifier/recorded/",
         "--hash-path", hash_wd.dirname().c_str(),
         "-o",
@@ -877,29 +876,30 @@ RED_AUTO_TEST_CASE_WD(TestRecorderWrm1, wd)
 
     RED_CHECK_FILE_CONTENTS(wd.add_file("output_base.pgs"), "100 0");
 
-    std::string expected;
-    auto get_and_set_expected = [&expected](auto const& path, auto const&... strs){
-        str_assign(expected, strs...);
-        auto content = RED_CHECK_GET_FILE_CONTENTS(path);
-        content.resize(std::min(expected.size(), content.size()));
-        return content;
-    };
-
     auto wrm_path = wd.add_file("output_base-000000.wrm");
+    {
+        std::string expected;
+        str_assign(expected, "v2\n1024 768\nnochecksum\n\n\n", wrm_path, ' ');
+        auto content = RED_CHECK_GET_FILE_CONTENTS(wd.add_file("output_base.mwrm"));
+        content.resize(std::min(expected.size(), content.size()));
+        RED_TEST(content == ut::ascii(expected));
+    }
 
-    RED_TEST(
-        get_and_set_expected(wd.add_file("output_base.mwrm"),
-            "v2\n1024 768\nnochecksum\n\n\n", wrm_path, ' ')
-        == ut::ascii(expected));
-    RED_TEST(
-        get_and_set_expected(hash_wd.add_file("output_base.mwrm"),
-            "v2\n\n\noutput_base.mwrm ")
-        == ut::ascii(expected));
-    RED_TEST(
-        get_and_set_expected(hash_wd.add_file("output_base-000000.wrm"),
-            "v2\n\n\noutput_base-000000.wrm ")
-        == ut::ascii(expected));
-    RED_TEST_FILE_SIZE(wrm_path, 98835+-100_v);
+    {
+        std::string expected = "v2\n\n\noutput_base.mwrm 235 ";
+        auto content = RED_CHECK_GET_FILE_CONTENTS(hash_wd.add_file("output_base.mwrm"));
+        content.resize(std::min(expected.size(), content.size()));
+        RED_TEST(content == ut::ascii(expected));
+    }
+
+    {
+        std::string expected = "v2\n\n\noutput_base-000000.wrm ";
+        auto content = RED_CHECK_GET_FILE_CONTENTS(hash_wd.add_file("output_base-000000.wrm"));
+        content.resize(std::min(expected.size(), content.size()));
+        RED_TEST(content == ut::ascii(expected));
+    }
+
+    RED_TEST_FILE_SIZE(wrm_path, 3207410+-100_v);
 }
 
 #ifndef REDEMPTION_NO_FFMPEG
@@ -911,9 +911,8 @@ RED_AUTO_TEST_CASE_WD(TestAppRecorder2, wd)
         "redrec",
         "-i",
             FIXTURES_PATH "/verifier/recorded/"
-            "SESSIONID-2020-08-10T141428.674981,"
-            "rec@127.0.0.1,Administrator@win10_2,"
-            "20200810-141428,jpoelen-mini,4420.mwrm",
+            "SESSIONID-0000,k@127.0.0.1,cgrosjean@win10cgr_no_probe"
+            ",20200810-165815,kriss-Latitude-E6430,4988.mwrm",
         "--mwrm-path", FIXTURES_PATH "/verifier/recorded/",
         "-o",
             output.c_str(),
@@ -926,12 +925,10 @@ RED_AUTO_TEST_CASE_WD(TestAppRecorder2, wd)
     TEST_DO_MAIN(argv, 0, hmac_key, trace_fn,
         str_concat("Output file is \"", output, "\".\n\n"), ""_av);
 
-    RED_TEST_FILE_SIZE(wd.add_file("recorder.1-000000.mp4"), 13450874);
-    RED_TEST_FILE_SIZE(wd.add_file("recorder.1-000001.mp4"), 1641583);
-    RED_TEST_FILE_SIZE(wd.add_file("recorder.1.mp4"), 14977057);
+    RED_TEST_FILE_SIZE(wd.add_file("recorder.1-000000.mp4"), 1338347);
+    RED_TEST_FILE_SIZE(wd.add_file("recorder.1.mp4"), 602634);
     RED_TEST_FILE_SIZE(wd.add_file("recorder.1.pgs"), 5);
-    RED_TEST_FILE_SIZE(wd.add_file("recorder.1-000000.png"), 26981);
-    RED_TEST_FILE_SIZE(wd.add_file("recorder.1-000001.png"), 27557);
+    RED_TEST_FILE_SIZE(wd.add_file("recorder.1-000000.png"), 1235630);
 }
 #endif
 

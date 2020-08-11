@@ -1486,9 +1486,12 @@ void Drawable::trace_mouse(const DrawablePointer& current_pointer, const int x, 
 
     Rect rect_sub_view(rect_intersect.x - rect_pointer.x, rect_intersect.y - rect_pointer.y,
         rect_intersect.cx, rect_intersect.cy);
+
     this->mem_blt_ex(
             rect_intersect,
-            current_pointer.image_data_view_mask24.sub_view(rect_sub_view),
+                (current_pointer.bpp == BitsPerPixel{32})
+                ?current_pointer.image_data_view_mask32.sub_view(rect_sub_view)
+                :current_pointer.image_data_view_mask24.sub_view(rect_sub_view),
             0, 0, 0x88);
     this->mem_blt_ex(
             rect_intersect,

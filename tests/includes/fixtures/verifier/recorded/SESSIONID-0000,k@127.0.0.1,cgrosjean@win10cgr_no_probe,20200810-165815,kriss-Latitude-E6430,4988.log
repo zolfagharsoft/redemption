@@ -1,0 +1,3 @@
+2020-08-10 16:58:17 type="SERVER_CERTIFICATE_MATCH_SUCCESS" description="X.509 server certificate match"
+2020-08-10 16:58:17 type="CERTIFICATE_CHECK_SUCCESS" description="Connexion to server allowed"
+2020-08-10 16:58:19 type="SESSION_ESTABLISHED_SUCCESSFULLY"

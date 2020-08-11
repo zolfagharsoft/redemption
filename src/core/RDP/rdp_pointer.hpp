@@ -217,6 +217,16 @@ public:
         return (this->dimensions.width != 0 && this->dimensions.height != 0/* && this->bpp*/);
     }
 
+
+    void emit_pointer32x32(OutStream & result) const
+    {
+        result.out_uint8(this->get_hotspot().x);
+        result.out_uint8(this->get_hotspot().y);
+
+        result.out_copy_bytes(this->get_24bits_xor_mask());
+        result.out_copy_bytes(this->get_monochrome_and_mask());
+    }
+
     void emit_pointer2(OutStream & result) const
     {
         result.out_uint8(this->get_dimensions().width);
@@ -701,6 +711,11 @@ inline Pointer decode_pointer(BitsPerPixel data_bpp, const BGRPalette & palette,
                            uint16_t mlen, const uint8_t * mask,
                            bool clean_up_32_bpp_cursor)
 {
+    LOG(LOG_INFO, "decode_pointer(bpp=%u width=%u height=%u hsx=%u hsy=%u dlen=%u, mlen=%u, clean_up=%u",
+        unsigned(data_bpp), unsigned(width), unsigned(height),
+        unsigned(hsx), unsigned(hsy), unsigned(dlen), unsigned(mlen),
+        unsigned(clean_up_32_bpp_cursor));
+
     Pointer cursor(data_bpp, CursorSize(width, height), Hotspot(hsx, hsy), dlen, data, mlen, mask);
 
     switch (data_bpp) {
@@ -799,6 +814,7 @@ inline Pointer decode_pointer(BitsPerPixel data_bpp, const BGRPalette & palette,
 
 inline Pointer pointer_loader_new(BitsPerPixel data_bpp, InStream & stream, const BGRPalette & palette, bool clean_up_32_bpp_cursor)
 {
+    LOG(LOG_INFO, "pointer_loader_new()");
     auto hsx      = stream.in_uint16_le();
     auto hsy      = stream.in_uint16_le();
     auto width    = stream.in_uint16_le();
@@ -896,6 +912,7 @@ inline Pointer pointer_loader_vnc(BytesPerPixel Bpp, uint16_t width, uint16_t he
 
 inline Pointer pointer_loader_2(InStream & stream)
 {
+    LOG(LOG_INFO, "pointer_loader_2()");
     uint8_t width     = stream.in_uint8();
     uint8_t height    = stream.in_uint8();
     BitsPerPixel data_bpp{stream.in_uint8()};
@@ -915,6 +932,8 @@ inline Pointer pointer_loader_2(InStream & stream)
 
 inline Pointer pointer_loader_32x32(InStream & stream)
 {
+    LOG(LOG_INFO, "pointer_loader_32x32()");
+
     const uint8_t width     = 32;
     const uint8_t height    = 32;
     const BitsPerPixel data_bpp{24};
