@@ -925,8 +925,8 @@ RED_AUTO_TEST_CASE_WD(TestAppRecorder2, wd)
     TEST_DO_MAIN(argv, 0, hmac_key, trace_fn,
         str_concat("Output file is \"", output, "\".\n\n"), ""_av);
 
-    RED_TEST_FILE_SIZE(wd.add_file("recorder.1-000000.mp4"), 1338347);
-    RED_TEST_FILE_SIZE(wd.add_file("recorder.1.mp4"), 602634);
+    RED_TEST_FILE_SIZE(wd.add_file("recorder.1-000000.mp4"), 1500000 +- 50_percent);
+    RED_TEST_FILE_SIZE(wd.add_file("recorder.1.mp4"), 900000 +- 50_percent);
     RED_TEST_FILE_SIZE(wd.add_file("recorder.1.pgs"), 5);
     RED_TEST_FILE_SIZE(wd.add_file("recorder.1-000000.png"), 1235630);
 }
