@@ -270,7 +270,7 @@ private:
         }
         else if (e.id == ERR_SESSION_PROBE_DISCONNECTION_RECONNECTION) {
             LOG(LOG_INFO, "Retry Session Probe Disconnection Reconnection");
-            return 1;
+            return 2;
         }
         else if (e.id == ERR_AUTOMATIC_RECONNECTION_REQUIRED) {
             LOG(LOG_INFO, "Retry Automatic Reconnection Required");
