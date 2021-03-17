@@ -112,8 +112,6 @@ struct FullVideoCaptureImpl final : gdi::CaptureApi
         MonotonicTimePoint now, uint16_t cursor_x, uint16_t cursor_y
     ) override;
 
-    void encoding_video_frame();
-
     void synchronize_times(MonotonicTimePoint monotonic_time, RealTimePoint real_time);
 
 private:
@@ -133,6 +131,8 @@ public:
         VideoParams const& video_params,
         NotifyNextVideo & next_video_notifier);
 
+    ~SequencedVideoCaptureImpl();
+
     void frame_marker_event(
         MonotonicTimePoint now, uint16_t cursor_x, uint16_t cursor_y
     ) override;
@@ -142,73 +142,37 @@ public:
         uint16_t cursor_x, uint16_t cursor_y
     ) override;
 
-    void ic_flush();
-
     void next_video(MonotonicTimePoint now);
-
-    void encoding_video_frame();
 
     void synchronize_times(MonotonicTimePoint monotonic_time, RealTimePoint real_time);
 
 private:
+    void ic_flush(const tm & now);
+
     void next_video_impl(MonotonicTimePoint now, NotifyNextVideo::Reason reason);
+
+    void init_recorder();
 
     // first next_video is ignored
     WaitingTimeBeforeNextSnapshot first_periodic_snapshot(MonotonicTimePoint now);
     WaitingTimeBeforeNextSnapshot video_sequencer_periodic_snapshot(MonotonicTimePoint now);
 
-    struct SequenceTransport
+    struct FilenameGenerator
     {
-        std::string filename;
-        int const num_pos;
-        int const groupid;
-        int num = 0;
-        AclReportApi * const acl_report;
-
-        SequenceTransport(
+        FilenameGenerator(
             std::string_view prefix,
             std::string_view filename,
-            std::string_view extension,
-            const int groupid,
-            AclReportApi * acl_report
+            std::string_view extension
         );
 
         void next();
-    };
 
-    struct VideoCapture
-    {
-        VideoCapture(
-            CaptureParams const & capture_params,
-            RDPDrawable & drawable,
-            gdi::ImageFrameApi & image_frame,
-            VideoParams const & video_params
-        );
-
-        ~VideoCapture();
-
-        void next_video();
-
-        void encoding_video_frame();
-
-        void frame_marker_event();
-
-        WaitingTimeBeforeNextSnapshot periodic_snapshot(MonotonicTimePoint now);
-
-        void trace_timestamp(const tm & now);
-
-        void clear_timestamp();
-
-        void prepare_video_frame();
-
-        void synchronize_times(MonotonicTimePoint monotonic_time, RealTimePoint real_time);
+        char const* current() const;
 
     private:
-        VideoCaptureCtx video_cap_ctx;
-        SequenceTransport trans;
-        std::unique_ptr<video_recorder> recorder;
-        const VideoParams video_params;
-        gdi::ImageFrameApi & image_frame_api;
+        std::string filename;
+        int const num_pos;
+        int num = 0;
     };
 
     bool ic_has_first_img = false;
@@ -216,8 +180,14 @@ private:
     const MonotonicTimePoint monotonic_start_capture;
     MonotonicTimeToRealTime monotonic_to_real;
 
-    VideoCapture vc;
-    SequenceTransport ic_trans;
+    VideoCaptureCtx video_cap_ctx;
+    FilenameGenerator vc_name_generator;
+    const int groupid;
+    AclReportApi * acl_report;
+    std::unique_ptr<video_recorder> recorder;
+    const VideoParams video_params;
+
+    FilenameGenerator ic_name_generator;
 
     /* const */ RDPDrawable & ic_drawable;
 
