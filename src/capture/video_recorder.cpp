@@ -510,13 +510,12 @@ static std::pair<int, char const*> encode_frame(
         pkt->stream_index = video_st->index;
         /* Write the compressed frame to the media file. */
         errnum = av_interleaved_write_frame(oc, pkt);
-        // av_packet_unref(&this->d->pkt);
     }
 
     return {errnum, "Failed while writing video frame"};
 }
 
-video_recorder::~video_recorder() /*NOLINT*/
+video_recorder::~video_recorder()
 {
     // flush the encoder
     auto [errnum, errmsg] = encode_frame(
