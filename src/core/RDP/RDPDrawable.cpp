@@ -126,7 +126,7 @@ RDPDrawable::RDPDrawable(const uint16_t width, const uint16_t height)
 : RDPDrawable(width, height, drawable_default_pointer())
 {}
 
-RDPDrawable::RDPDrawable(const uint16_t width, const uint16_t height, Pointer const& cursor)
+RDPDrawable::RDPDrawable(const uint16_t width, const uint16_t height, RdpPointerView const& cursor)
 : drawable(width, height)
 , save_mouse_x(0)
 , save_mouse_y(0)
@@ -136,7 +136,7 @@ RDPDrawable::RDPDrawable(const uint16_t width, const uint16_t height, Pointer co
 , frame_start_count(0)
 , mod_palette_rgb(BGRPalette::classic_332())
 {
-    const auto hotspot = cursor.get_hotspot();
+    const auto hotspot = cursor.hotspot();
     this->mouse_cursor_hotspot_x = hotspot.x;
     this->mouse_cursor_hotspot_y = hotspot.y;
 }
@@ -550,8 +550,8 @@ void RDPDrawable::clear_mouse()
     return this->drawable.clear_mouse(this->current_pointer, x, y, this->save_mouse);
 }
 
-void RDPDrawable::set_pointer(uint16_t /*cache_idx*/, Pointer const& cursor, SetPointerMode /*mode*/)
+void RDPDrawable::set_pointer(uint16_t /*cache_idx*/, RdpPointerView const& cursor, SetPointerMode /*mode*/)
 {
-    assert(cursor.get_native_xor_bpp() != BitsPerPixel{0});
+    assert(cursor.xor_bits_per_pixel() != BitsPerPixel{0});
     this->current_pointer.set_cursor(cursor);
 }

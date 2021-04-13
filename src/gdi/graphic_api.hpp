@@ -50,7 +50,7 @@ class RDPBmpCache;
 #endif
 
 struct RDPBitmapData;
-struct Pointer;
+struct RdpPointerView;
 class Bitmap;
 class GlyphCache;
 
@@ -325,7 +325,7 @@ struct GraphicApi : private noncopyable
     };
 
     /// \c cache_idx is ignored with \c SetPointerMode::Insert
-    virtual void set_pointer(uint16_t cache_idx, Pointer const& cursor, SetPointerMode mode) = 0;
+    virtual void set_pointer(uint16_t cache_idx, RdpPointerView const& cursor, SetPointerMode mode) = 0;
 
     // TODO berk, data within size
     virtual void set_row(std::size_t rownum, bytes_view data) { (void)rownum; (void)data; }
@@ -377,7 +377,7 @@ public:
     void draw(RDPColCache   const & /*cmd*/) override {}
     void draw(RDPBrushCache const & /*cmd*/) override {}
 
-    void set_pointer(uint16_t /*cache_idx*/, Pointer const& /*cursor*/, SetPointerMode /*mode*/) override {}
+    void set_pointer(uint16_t /*cache_idx*/, RdpPointerView const& /*cursor*/, SetPointerMode /*mode*/) override {}
 
 public:
     NullGraphic() = default;

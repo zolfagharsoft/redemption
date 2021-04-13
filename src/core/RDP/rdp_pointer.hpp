@@ -26,21 +26,120 @@
 
 class InStream;
 class OutStream;
-class BGRPalette;
 
 struct CursorSize
 {
     uint16_t width;
     uint16_t height;
-    explicit constexpr CursorSize(uint16_t w, uint16_t h) : width(w), height(h) {}
+
+    constexpr explicit CursorSize(uint16_t width, uint16_t height) noexcept
+    : width(width)
+    , height(height)
+    {}
 };
 
 struct Hotspot
 {
     uint16_t x;
     uint16_t y;
-    explicit constexpr Hotspot(uint16_t x, uint16_t y) : x(x), y(y) {}
+
+    constexpr explicit Hotspot(uint16_t x, uint16_t y) noexcept
+    : x(x)
+    , y(y)
+    {}
 };
+
+struct RdpPointerView
+{
+    RdpPointerView() = default;
+
+    constexpr explicit RdpPointerView(
+        CursorSize dimensions,
+        Hotspot hotspot,
+        BitsPerPixel xor_bits_per_pixel,
+        bytes_view xor_mask,
+        bytes_view and_mask
+    ) noexcept
+    : dimensions_(dimensions)
+    , hotspot_(hotspot)
+    , xor_bits_per_pixel_(xor_bits_per_pixel)
+    , xor_mask_(xor_mask)
+    , and_mask_(and_mask)
+    {
+        assert(xor_bits_per_pixel == BitsPerPixel(0)
+            || compute_mask_line_size(dimensions.width, xor_bits_per_pixel) != 0);
+        assert(xor_mask.size() == dimensions.height
+                                * compute_mask_line_size(dimensions.width, xor_bits_per_pixel));
+        assert(and_mask.size() == dimensions.height
+                                * compute_mask_line_size(dimensions.width, BitsPerPixel(1)));
+    }
+
+    constexpr CursorSize dimensions() const noexcept
+    {
+        return this->dimensions_;
+    }
+
+    constexpr Hotspot hotspot() const noexcept
+    {
+        return this->hotspot_;
+    }
+
+    constexpr BitsPerPixel xor_bits_per_pixel() const noexcept
+    {
+        return this->xor_bits_per_pixel_;
+    }
+
+    // padded to a 2-byte boundary
+    constexpr bytes_view xor_mask() const noexcept
+    {
+        return this->xor_mask_;
+    }
+
+    // padded to a 2-byte boundary
+    constexpr bytes_view and_mask() const noexcept
+    {
+        return this->and_mask_;
+    }
+
+    // padded to a 2-byte boundary
+    constexpr static uint32_t compute_mask_line_size(
+        uint16_t width, BitsPerPixel bits_per_pixel) noexcept
+    {
+        switch (bits_per_pixel) {
+            case BitsPerPixel::BitsPP1:
+                return ::even_pad_length(::nbbytes(width));
+
+            case BitsPerPixel::BitsPP4:
+                return ::even_pad_length(::nbbytes(width * 4));
+
+            case BitsPerPixel::BitsPP8:
+                return ::even_pad_length(width);
+
+            case BitsPerPixel::BitsPP15:
+            case BitsPerPixel::BitsPP16:
+                return width * 2;
+
+            case BitsPerPixel::BitsPP24:
+                return ::even_pad_length(width * 3);
+
+            case BitsPerPixel::BitsPP32:
+                return width * 4;
+
+            case BitsPerPixel::Unspecified:
+                break;
+        }
+
+        return 0;
+    }
+
+private:
+    CursorSize dimensions_ {0, 0};
+    Hotspot hotspot_ {0, 0};
+    BitsPerPixel xor_bits_per_pixel_;
+    bytes_view xor_mask_;
+    bytes_view and_mask_;
+};
+
 
 struct Pointer
 {
@@ -86,6 +185,26 @@ private:
 
 public:
     constexpr explicit Pointer() = default;
+
+    explicit Pointer(RdpPointerView pointer)
+    {
+        *this = build_from_native(
+            pointer.dimensions(), pointer.hotspot(),
+            pointer.xor_bits_per_pixel(), pointer.xor_mask(), pointer.and_mask());
+    }
+
+    Pointer& operator=(RdpPointerView pointer)
+    {
+        *this = Pointer(pointer);
+        return *this;
+    }
+
+    operator RdpPointerView () const
+    {
+        return RdpPointerView(
+            get_dimensions(), get_hotspot(), get_native_xor_bpp(),
+            get_native_xor_mask(), get_monochrome_and_mask());
+    }
 
     template<class Builder>
     constexpr static Pointer build_from(CursorSize d, Hotspot hs, BitsPerPixel bits_per_pixel, Builder&& builder)
@@ -156,24 +275,14 @@ public:
 //    arbitrary color depth. Support for the New Pointer Update is advertised
 //    in the Pointer Capability Set (section 2.2.7.1.5).
 
-bool emit_native_pointer(OutStream& stream, uint16_t cache_idx, Pointer const& cursor);
+bool emit_native_pointer(OutStream& stream, uint16_t cache_idx, RdpPointerView const& cursor);
 
 
-Pointer pointer_loader_new(BitsPerPixel data_bpp, InStream& stream);
+RdpPointerView pointer_loader_new(BitsPerPixel data_bpp, InStream& stream);
 
-Pointer decode_pointer(BitsPerPixel data_bpp,
-                       uint16_t width,
-                       uint16_t height,
-                       uint16_t hsx,
-                       uint16_t hsy,
-                       uint16_t dlen,
-                       const uint8_t * data,
-                       uint16_t mlen,
-                       const uint8_t * mask);
+RdpPointerView pointer_loader_2(InStream & stream);
 
-Pointer pointer_loader_2(InStream & stream);
-
-Pointer pointer_loader_32x32(InStream & stream);
+RdpPointerView pointer_loader_32x32(InStream & stream);
 
 Pointer const& normal_pointer() noexcept;
 Pointer const& edit_pointer() noexcept;

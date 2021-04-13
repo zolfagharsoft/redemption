@@ -81,18 +81,18 @@ bool Pointer::operator==(const Pointer & other) const
 // pointers the XOR data is always padded to a 4-byte boundary per scan line,
 // while color pointer XOR data is still packed on a 2-byte boundary.
 
-bool emit_native_pointer(OutStream& stream, uint16_t cache_idx, Pointer const& cursor)
+bool emit_native_pointer(OutStream& stream, uint16_t cache_idx, RdpPointerView const& cursor)
 {
-    const auto dimensions = cursor.get_dimensions();
-    const auto hotspot = cursor.get_hotspot();
+    const auto dimensions = cursor.dimensions();
+    const auto hotspot = cursor.hotspot();
 
-    const bool new_pointer_update_used = (cursor.get_native_xor_bpp() != BitsPerPixel{24});
+    const bool new_pointer_update_used = (cursor.xor_bits_per_pixel() != BitsPerPixel{24});
 
     if (new_pointer_update_used)
     {
         // xorBpp (2 bytes): A 16-bit, unsigned integer. The color depth in bits-per-pixel of the XOR mask
         //     contained in the colorPtrAttr field.
-        stream.out_uint16_le(static_cast<uint16_t>(cursor.get_native_xor_bpp()));
+        stream.out_uint16_le(static_cast<uint16_t>(cursor.xor_bits_per_pixel()));
     }
 
     // cacheIndex (2 bytes): A 16-bit, unsigned integer. The zero-based cache
@@ -136,15 +136,15 @@ bool emit_native_pointer(OutStream& stream, uint16_t cache_idx, Pointer const& c
     // lengthAndMask (2 bytes): A 16-bit, unsigned integer. The size in bytes of
     //     the andMaskData field.
 
-    auto av_and_mask = cursor.get_monochrome_and_mask();
-    auto av_xor_mask = cursor.get_native_xor_mask();
+    auto av_and_mask = cursor.and_mask();
+    auto av_xor_mask = cursor.xor_mask();
 
-    stream.out_uint16_le(av_and_mask.size());
+    stream.out_uint16_le(checked_int{av_and_mask.size()});
 
     // lengthXorMask (2 bytes): A 16-bit, unsigned integer. The size in bytes of
     //     the xorMaskData field.
 
-    stream.out_uint16_le(av_xor_mask.size());
+    stream.out_uint16_le(checked_int{av_xor_mask.size()});
 
     // xorMaskData (variable): Variable number of bytes: Contains the 24-bpp,
     //     bottom-up XOR mask scan-line data. The XOR mask is padded to a 2-byte
@@ -176,24 +176,7 @@ bool emit_native_pointer(OutStream& stream, uint16_t cache_idx, Pointer const& c
     return new_pointer_update_used;
 }
 
-Pointer decode_pointer(BitsPerPixel data_bpp,
-                       uint16_t width,
-                       uint16_t height,
-                       uint16_t hsx,
-                       uint16_t hsy,
-                       uint16_t dlen,
-                       const uint8_t * data,
-                       uint16_t mlen,
-                       const uint8_t * mask)
-{
-    return Pointer::build_from_native(CursorSize(width, height),
-                                      Hotspot(hsx, hsy),
-                                      data_bpp,
-                                      bytes_view(data, dlen),
-                                      bytes_view(mask, mlen));
-}
-
-Pointer pointer_loader_new(BitsPerPixel data_bpp, InStream& stream)
+RdpPointerView pointer_loader_new(BitsPerPixel data_bpp, InStream& stream)
 {
     auto hsx      = stream.in_uint16_le();
     auto hsy      = stream.in_uint16_le();
@@ -203,30 +186,25 @@ Pointer pointer_loader_new(BitsPerPixel data_bpp, InStream& stream)
     uint16_t mlen = stream.in_uint16_le(); /* mask length */
     uint16_t dlen = stream.in_uint16_le(); /* data length */
 
-    assert(::even_pad_length(::nbbytes(width)) == mlen / height);
-    assert(::even_pad_length(::nbbytes_large(width * underlying_cast(data_bpp))) == dlen / height);
-
     if (!stream.in_check_rem(mlen + dlen)){
         LOG(LOG_ERR, "Not enough data for cursor (dlen=%u mlen=%u need=%u remain=%zu)",
-            mlen, dlen, static_cast<uint16_t>(mlen+dlen), stream.in_remain());
+            mlen, dlen, mlen+dlen, stream.in_remain());
         throw Error(ERR_RDP_PROCESS_NEW_POINTER_LEN_NOT_OK);
     }
 
-    const uint8_t * data = stream.in_uint8p(dlen);
-    const uint8_t * mask = stream.in_uint8p(mlen);
+    auto data = stream.in_skip_bytes(dlen);
+    auto mask = stream.in_skip_bytes(mlen);
 
-    return decode_pointer(data_bpp,
-                          width,
-                          height,
-                          hsx,
-                          hsy,
-                          dlen,
-                          data,
-                          mlen,
-                          mask);
+    return RdpPointerView(
+        CursorSize{width, height},
+        Hotspot{hsx, hsy},
+        data_bpp,
+        data,
+        mask
+    );
 }
 
-Pointer pointer_loader_2(InStream & stream)
+RdpPointerView pointer_loader_2(InStream & stream)
 {
     uint8_t width     = stream.in_uint8();
     uint8_t height    = stream.in_uint8();
@@ -236,24 +214,28 @@ Pointer pointer_loader_2(InStream & stream)
     uint16_t dlen     = stream.in_uint16_le();
     uint16_t mlen     = stream.in_uint16_le();
 
+    if (!stream.in_check_rem(mlen + dlen)){
+        LOG(LOG_ERR, "Not enough data for cursor (dlen=%u mlen=%u need=%u remain=%zu)",
+            mlen, dlen, mlen+dlen, stream.in_remain());
+        throw Error(ERR_RDP_PROCESS_NEW_POINTER_LEN_NOT_OK);
+    }
+
     LOG_IF(dlen > Pointer::DATA_SIZE, LOG_ERR, "Corrupted recording: recorded mouse data length too large");
     LOG_IF(mlen > Pointer::MASK_SIZE, LOG_ERR, "Corrupted recording: recorded mouse data mask too large");
 
-    auto data = stream.in_uint8p(dlen);
-    auto mask = stream.in_uint8p(mlen);
+    auto data = stream.in_skip_bytes(dlen);
+    auto mask = stream.in_skip_bytes(mlen);
 
-    return decode_pointer(data_bpp,
-                          width,
-                          height,
-                          hsx,
-                          hsy,
-                          dlen,
-                          data,
-                          mlen,
-                          mask);
+    return RdpPointerView(
+        CursorSize{width, height},
+        Hotspot{hsx, hsy},
+        data_bpp,
+        data,
+        mask
+    );
 }
 
-Pointer pointer_loader_32x32(InStream & stream)
+RdpPointerView pointer_loader_32x32(InStream & stream)
 {
     const uint8_t width     = 32;
     const uint8_t height    = 32;
@@ -263,21 +245,25 @@ Pointer pointer_loader_32x32(InStream & stream)
     const uint16_t dlen     = 32 * 32 * nb_bytes_per_pixel(data_bpp);
     uint16_t mlen           = 32 * ::nbbytes(32);
 
+    if (!stream.in_check_rem(mlen + dlen)){
+        LOG(LOG_ERR, "Not enough data for cursor (dlen=%u mlen=%u need=%u remain=%zu)",
+            mlen, dlen, mlen+dlen, stream.in_remain());
+        throw Error(ERR_RDP_PROCESS_NEW_POINTER_LEN_NOT_OK);
+    }
+
     LOG_IF(dlen > Pointer::DATA_SIZE, LOG_ERR, "Corrupted recording: recorded mouse data length too large");
     LOG_IF(mlen > Pointer::MASK_SIZE, LOG_ERR, "Corrupted recording: recorded mouse data mask too large");
 
-    auto data = stream.in_uint8p(dlen);
-    auto mask = stream.in_uint8p(mlen);
+    auto data = stream.in_skip_bytes(dlen);
+    auto mask = stream.in_skip_bytes(mlen);
 
-    return decode_pointer(data_bpp,
-                          width,
-                          height,
-                          hsx,
-                          hsy,
-                          dlen,
-                          data,
-                          mlen,
-                          mask);
+    return RdpPointerView(
+        CursorSize{width, height},
+        Hotspot{hsx, hsy},
+        data_bpp,
+        data,
+        mask
+    );
 }
 
 namespace
@@ -288,8 +274,8 @@ constexpr Pointer predefined_pointer(
     const uint16_t hsx, const uint16_t hsy)
 {
     return Pointer::build_from(
-        CursorSize(width, height),
-        Hotspot(hsx, hsy),
+        CursorSize{width, height},
+        Hotspot{hsx, hsy},
         BitsPerPixel(24),
         [&](uint8_t * dest, uint8_t * dest_mask)
         {

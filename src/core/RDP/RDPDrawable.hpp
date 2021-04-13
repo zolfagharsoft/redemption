@@ -61,7 +61,7 @@ private:
 
 public:
     RDPDrawable(const uint16_t width, const uint16_t height);
-    RDPDrawable(const uint16_t width, const uint16_t height, Pointer const& cursor);
+    RDPDrawable(const uint16_t width, const uint16_t height, RdpPointerView const& cursor);
 
     void resize(uint16_t width, uint16_t height) override;
 
@@ -195,7 +195,7 @@ public:
     void draw(const RDP::RAIL::ActivelyMonitoredDesktop       & /*unused*/) override {}
     void draw(const RDP::RAIL::NonMonitoredDesktop            & /*unused*/) override {}
 
-    void set_pointer(uint16_t cache_idx, Pointer const& cursor, SetPointerMode mode) override;
+    void set_pointer(uint16_t cache_idx, RdpPointerView const& cursor, SetPointerMode mode) override;
 
     void set_mouse_cursor_pos(uint16_t x, uint16_t y)
     {

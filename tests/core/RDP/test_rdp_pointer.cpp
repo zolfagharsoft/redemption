@@ -504,14 +504,14 @@ Mask For Cursor
     };
 
     InStream in_stream_cursor(buffer);
-    Pointer cursor = pointer_loader_new(BitsPerPixel{1}, in_stream_cursor);
+    RdpPointerView cursor = pointer_loader_new(BitsPerPixel{1}, in_stream_cursor);
 
-    RED_CHECK_EQ(cursor.get_hotspot().x, 8);
-    RED_CHECK_EQ(cursor.get_hotspot().y, 9);
-    RED_CHECK_EQ(cursor.get_dimensions().width, 32);
-    RED_CHECK_EQ(cursor.get_dimensions().height, 32);
-    auto d = cursor.get_native_xor_mask();
-    auto m = cursor.get_monochrome_and_mask();
+    RED_CHECK_EQ(cursor.hotspot().x, 8);
+    RED_CHECK_EQ(cursor.hotspot().y, 9);
+    RED_CHECK_EQ(cursor.dimensions().width, 32);
+    RED_CHECK_EQ(cursor.dimensions().height, 32);
+    auto d = cursor.xor_mask();
+    auto m = cursor.and_mask();
 
     RED_CHECK_EQUAL(m.size(), 32 * 4);
     RED_CHECK_SIG(m,
@@ -793,14 +793,14 @@ RED_AUTO_TEST_CASE(TestLinux32bppPointer)
     };
 
     InStream stream(new_pointer_32bpp);
-    Pointer cursor = pointer_loader_new(BitsPerPixel{32}, stream);
+    RdpPointerView cursor = pointer_loader_new(BitsPerPixel{32}, stream);
 
-    RED_CHECK_EQ(cursor.get_hotspot().x, 15);
-    RED_CHECK_EQ(cursor.get_hotspot().y, 10);
-    RED_CHECK_EQ(cursor.get_dimensions().width, 32);
-    RED_CHECK_EQ(cursor.get_dimensions().height, 32);
-    auto d = cursor.get_native_xor_mask();
-    auto m = cursor.get_monochrome_and_mask();
+    RED_CHECK_EQ(cursor.hotspot().x, 15);
+    RED_CHECK_EQ(cursor.hotspot().y, 10);
+    RED_CHECK_EQ(cursor.dimensions().width, 32);
+    RED_CHECK_EQ(cursor.dimensions().height, 32);
+    auto d = cursor.xor_mask();
+    auto m = cursor.and_mask();
 
     RED_CHECK_EQUAL(m.size(), 32 * 4);
     RED_CHECK_SIG(m,

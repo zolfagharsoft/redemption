@@ -46,26 +46,26 @@ struct DrawablePointer
     ImageView image_data_view_data;
     ImageView image_data_view_mask;
 
-    DrawablePointer() :
-        image_data_view_data(create_img(nullptr, 0)),
-        image_data_view_mask(create_img(nullptr, 0))
+    DrawablePointer()
+        : image_data_view_data(create_img(nullptr, 0))
+        , image_data_view_mask(create_img(nullptr, 0))
     {}
 
-    DrawablePointer(Pointer const& cursor) :
-        DrawablePointer()
+    DrawablePointer(RdpPointerView const& cursor)
+        : DrawablePointer()
     {
         this->set_cursor(cursor);
     }
 
-    void set_cursor(Pointer const& cursor)
+    void set_cursor(RdpPointerView const& cursor)
     {
-        const auto dim = cursor.get_dimensions();
+        const auto dim = cursor.dimensions();
 
         this->width = dim.width;
         this->height = dim.height;
 
-        const BitsPerPixel bits_per_pixel = cursor.get_native_xor_bpp();
-        auto pointer_data = cursor.get_native_xor_mask();
+        const BitsPerPixel bits_per_pixel = cursor.xor_bits_per_pixel();
+        auto pointer_data = cursor.xor_mask();
 
         switch (bits_per_pixel) {
             case BitsPerPixel::BitsPP1: {
@@ -154,7 +154,7 @@ struct DrawablePointer
                 break;
         }
 
-        const uint8_t* pointer_mask = cursor.get_monochrome_and_mask().data();
+        const uint8_t* pointer_mask = cursor.and_mask().data();
         const unsigned int mask_line_bytes = ::even_pad_length(::nbbytes(this->width));
 
         auto* mask_ptr = this->mask;

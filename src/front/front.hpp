@@ -941,7 +941,7 @@ public:
             "Front::server_relayout: done");
     }
 
-    void set_pointer(uint16_t cache_idx, Pointer const& cursor, SetPointerMode mode) override {
+    void set_pointer(uint16_t cache_idx, RdpPointerView const& cursor, SetPointerMode mode) override {
         this->gd->set_pointer(cache_idx, cursor, mode);
     }
 

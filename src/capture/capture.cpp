@@ -1915,7 +1915,7 @@ void Capture::draw(const RDP::RAIL::NonMonitoredDesktop & cmd)
     }
 }
 
-void Capture::set_pointer(uint16_t cache_idx, Pointer const& cursor, SetPointerMode mode)
+void Capture::set_pointer(uint16_t cache_idx, RdpPointerView const& cursor, SetPointerMode mode)
 {
     if (this->capture_drawable) {
         for (gdi::GraphicApi & gd : this->gds){

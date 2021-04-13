@@ -209,7 +209,7 @@ protected:
     virtual void flush_orders() = 0;
     virtual void flush_bitmaps() = 0;
 
-    virtual void send_pointer(int cache_idx, const Pointer & cursor) = 0;
+    virtual void send_pointer(int cache_idx, RdpPointerView const& cursor) = 0;
     virtual void cached_pointer_update(int cache_idx) = 0;
 
 public:
@@ -797,7 +797,7 @@ public:
         }
     }
 
-    void set_pointer(uint16_t /*cache_idx*/, Pointer const& cursor, SetPointerMode mode) override
+    void set_pointer(uint16_t /*cache_idx*/, RdpPointerView const& cursor, SetPointerMode mode) override
     {
         int cache_idx = 0;
         switch (this->pointer_cache.add_pointer(cursor, cache_idx)) {

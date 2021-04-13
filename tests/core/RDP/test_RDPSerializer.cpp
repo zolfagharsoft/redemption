@@ -58,7 +58,7 @@ protected:
     void flush_orders() override {}
     void flush_bitmaps() override {}
 
-    void send_pointer(int cache_idx, const Pointer & cursor) override {
+    void send_pointer(int cache_idx, RdpPointerView const& cursor) override {
         (void)cache_idx;
         (void)cursor;
     }

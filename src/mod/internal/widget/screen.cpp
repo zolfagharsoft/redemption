@@ -34,8 +34,6 @@ WidgetScreen::WidgetScreen(
     , theme(std::move(theme))
     , tooltip(nullptr)
     , current_over(nullptr)
-    , normal_pointer(::normal_pointer())
-    , edit_pointer(::edit_pointer())
     , font(font)
 {
     this->set_wh(width, height);

@@ -72,7 +72,8 @@ public:
         }
     }
 
-    void add_pointer_static(const Pointer & cursor, int index) {
+    void add_pointer_static(RdpPointerView const& cursor, int index)
+    {
         assert((index >= 0) && (index < MAX_POINTER_COUNT));
         this->Pointers[index] = cursor;
         this->stamps[index] = this->pointer_stamp;
@@ -80,8 +81,10 @@ public:
     }
 
     /* check if the pointer is in the cache or not and if it should be sent      */
-    int add_pointer(const Pointer & cursor, int & cache_idx)
+    int add_pointer(RdpPointerView const& cursor_, int & cache_idx)
     {
+        Pointer cursor {cursor_};
+
         int oldest = 0x7fffffff;
         int index = 0;
 

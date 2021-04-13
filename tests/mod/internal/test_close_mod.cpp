@@ -120,7 +120,7 @@ RED_AUTO_TEST_CASE(TestCloseModRail)
     {
         using gdi::GraphicApiForwarder<gdi::GraphicApi&>::GraphicApiForwarder;
 
-        void set_pointer(uint16_t cache_idx, const Pointer & cursor, gdi::GraphicApi::SetPointerMode mode) override
+        void set_pointer(uint16_t cache_idx, const RdpPointerView & cursor, gdi::GraphicApi::SetPointerMode mode) override
         {
             (void)cache_idx;
             (void)mode;

@@ -5759,7 +5759,7 @@ public:
                 pointer_idx);
             throw Error(ERR_RDP_PROCESS_POINTER_CACHE_NOT_OK);
         }
-        Pointer & cursor = this->cursors[pointer_idx];
+        Pointer const & cursor = this->cursors[pointer_idx];
         if (cursor.is_valid()) {
             drawable.set_pointer(pointer_idx, cursor, gdi::GraphicApi::SetPointerMode::Cached);
         }

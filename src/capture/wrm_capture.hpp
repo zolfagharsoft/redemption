@@ -447,27 +447,28 @@ public:
     }
 
 protected:
-    void send_pointer(int cache_idx, const Pointer & cursor) override {
-        assert(cursor.get_native_xor_bpp() != BitsPerPixel{0});
+    void send_pointer(int cache_idx, RdpPointerView const& cursor) override
+    {
+        assert(cursor.xor_bits_per_pixel() != BitsPerPixel{0});
 
         StaticOutStream<32+Pointer::MAX_WIDTH*Pointer::MAX_HEIGHT*::nbbytes(Pointer::MAX_BPP)> payload;
 
-        payload.out_uint16_le(static_cast<uint16_t>(cursor.get_native_xor_bpp()));
+        payload.out_uint16_le(safe_int(cursor.xor_bits_per_pixel()));
 
         payload.out_uint16_le(cache_idx);
 
-        const auto hotspot = cursor.get_hotspot();
+        const auto hotspot = cursor.hotspot();
 
         payload.out_uint16_le(hotspot.x);
         payload.out_uint16_le(hotspot.y);
 
-        auto const dimensions = cursor.get_dimensions();
+        auto const dimensions = cursor.dimensions();
 
         payload.out_uint16_le(dimensions.width);
         payload.out_uint16_le(dimensions.height);
 
-        auto av_and_mask = cursor.get_monochrome_and_mask();
-        auto av_xor_mask = cursor.get_native_xor_mask();
+        auto av_and_mask = cursor.and_mask();
+        auto av_xor_mask = cursor.xor_mask();
 
         payload.out_uint16_le(av_and_mask.size());
         payload.out_uint16_le(av_xor_mask.size());
@@ -762,7 +763,7 @@ public:
         }
     }
 
-    void set_pointer(uint16_t cache_idx, Pointer const& cursor, SetPointerMode mode) override {
+    void set_pointer(uint16_t cache_idx, RdpPointerView const& cursor, SetPointerMode mode) override {
         this->graphic_to_file.set_pointer(cache_idx, cursor, mode);
     }
 

@@ -1052,7 +1052,7 @@ public:
         this->draw_impl(no_log{}, order);
     }
 
-    void set_pointer(uint16_t /*cache_idx*/, Pointer const& /*cursor*/, SetPointerMode /*mode*/) override
+    void set_pointer(uint16_t /*cache_idx*/, RdpPointerView const& /*cursor*/, SetPointerMode /*mode*/) override
     {}
 
     void draw(RDPSetSurfaceCommand const & /*cmd*/) override {

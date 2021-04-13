@@ -53,8 +53,8 @@ inline Pointer pointer_loader_vnc(
     uint16_t minwidth = 32;
 
     return Pointer::build_from(
-        CursorSize(minwidth, minheight),
-        Hotspot(hsx, hsy),
+        CursorSize{minwidth, minheight},
+        Hotspot{hsx, hsy},
         BitsPerPixel(24),
         [&](uint8_t (&data)[Pointer::DATA_SIZE], uint8_t * mask)
         {
