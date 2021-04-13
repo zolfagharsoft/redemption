@@ -550,8 +550,18 @@ void RDPDrawable::clear_mouse()
     return this->drawable.clear_mouse(this->current_pointer, x, y, this->save_mouse);
 }
 
-void RDPDrawable::set_pointer(uint16_t /*cache_idx*/, RdpPointerView const& cursor, SetPointerMode /*mode*/)
+void RDPDrawable::cached_pointer(uint16_t cache_idx)
 {
-    assert(cursor.xor_bits_per_pixel() != BitsPerPixel{0});
+
+}
+
+void RDPDrawable::new_pointer(uint16_t cache_idx, RdpPointerView const& cursor)
+{
+
+}
+
+void RDPDrawable::set_internal_pointer(Pointer const& cursor)
+{
+    assert(cursor.get_native_xor_bpp() != BitsPerPixel{0});
     this->current_pointer.set_cursor(cursor);
 }

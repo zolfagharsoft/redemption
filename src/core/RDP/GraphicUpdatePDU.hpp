@@ -847,10 +847,10 @@ protected:
 //    +---------------------------|------------------------------+
 
 
-    void send_pointer(int cache_idx, RdpPointerView const& cursor) override
+    void send_pointer(uint16_t cache_idx, RdpPointerView const& cursor) override
     {
         LOG_IF(bool(this->verbose & RDPSerializerVerbose::pointer), LOG_INFO,
-            "GraphicsUpdatePDU::send_pointer(cache_idx=%d)", cache_idx);
+            "GraphicsUpdatePDU::send_pointer(cache_idx=%u)", cache_idx);
 
         assert(cursor.xor_bits_per_pixel() != BitsPerPixel{0});
 
@@ -879,9 +879,9 @@ protected:
 //      cached using either the Color Pointer Update (section 2.2.9.1.1.4.4) or
 //      New Pointer Update (section 2.2.9.1.1.4.5).
 
-    void cached_pointer_update(int cache_idx) override {
+    void cached_pointer_update(uint16_t cache_idx) override {
         LOG_IF(bool(this->verbose & RDPSerializerVerbose::pointer), LOG_INFO,
-            "GraphicsUpdatePDU::set_pointer(cache_idx=%d)", cache_idx);
+            "GraphicsUpdatePDU::cached_pointer_update(cache_idx=%d)", cache_idx);
 
         StaticOutReservedStreamHelper<1024, 65536-1024> stream;
         stream.get_data_stream().out_uint16_le(cache_idx);
@@ -892,7 +892,7 @@ protected:
                             , 0, stream, underlying_cast(this->verbose));
 
         LOG_IF(bool(this->verbose & RDPSerializerVerbose::pointer), LOG_INFO,
-            "GraphicsUpdatePDU::set_pointer done");
+            "GraphicsUpdatePDU::cached_pointer_update done");
     }   // void cached_pointer_update(int cache_idx)
 
 public:

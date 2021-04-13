@@ -74,10 +74,19 @@ struct TestGd : gdi::GraphicApiForwarder<gdi::GraphicApi&>
 {
     using gdi::GraphicApiForwarder<gdi::GraphicApi&>::GraphicApiForwarder;
 
-    void set_pointer(uint16_t cache_idx, const RdpPointerView & cursor, gdi::GraphicApi::SetPointerMode mode) override
+    void cached_pointer(uint16_t cache_idx) override
     {
         (void)cache_idx;
-        (void)mode;
+    }
+
+    void new_pointer(uint16_t cache_idx, RdpPointerView const& cursor) override
+    {
+        (void)cache_idx;
+        (void)cursor;
+    }
+
+    void set_internal_pointer(Pointer const& cursor) override
+    {
         this->last_cursor = cursor;
     }
 
@@ -123,7 +132,7 @@ RED_AUTO_TEST_CASE(TestRailHostMod)
     RED_CHECK_IMG(front, IMG_TEST_PATH "rail1.png");
 
     // set pointer mod
-    mod_ref.gd->set_pointer(0, normal_pointer(), gdi::GraphicApi::SetPointerMode::Insert);
+    mod_ref.gd->set_internal_pointer(normal_pointer());
 
     // move to top border
     host_mod.rdp_input_mouse(MOUSE_FLAG_MOVE, 200, 19, nullptr);

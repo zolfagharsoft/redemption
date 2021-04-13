@@ -79,7 +79,7 @@ struct Cursor
     uint8_t blue_shift;
     VNCVerbose verbose;
 
-    EncoderState operator()(Buf64k & buf, gdi::GraphicApi & drawable)
+    EncoderState operator()(Buf64k & buf, gdi::GraphicApi & gd)
     {
         if (this->rect.isempty()) {
             // TODO: empty Pointer: no cursor data to read. Should we set an invisible pointer ? If so we should have some flag to configure it
@@ -126,7 +126,8 @@ struct Cursor
             this->red_shift, this->red_max,
             this->green_shift, this->green_max,
             this->blue_shift, this->blue_max);
-        drawable.set_pointer(0, cursor, gdi::GraphicApi::SetPointerMode::Insert);
+        // TODO use a local cache and a local cache_idx
+        gd.new_pointer(0, cursor);
 
         return EncoderState::Exit;
     }

@@ -120,10 +120,12 @@ RED_AUTO_TEST_CASE(TestCloseModRail)
     {
         using gdi::GraphicApiForwarder<gdi::GraphicApi&>::GraphicApiForwarder;
 
-        void set_pointer(uint16_t cache_idx, const RdpPointerView & cursor, gdi::GraphicApi::SetPointerMode mode) override
+        void cached_pointer(uint16_t /*cache_idx*/) override {}
+
+        void new_pointer(uint16_t /*cache_idx*/, RdpPointerView const& /*cursor*/) override {}
+
+        void set_internal_pointer(Pointer const& cursor) override
         {
-            (void)cache_idx;
-            (void)mode;
             this->last_cursor = cursor;
         }
 
@@ -165,7 +167,7 @@ RED_AUTO_TEST_CASE(TestCloseModRail)
     RED_CHECK_IMG(front, IMG_TEST_PATH "close_mod_rail.png");
 
     // set pointer mod
-    gd.set_pointer(0, normal_pointer(), gdi::GraphicApi::SetPointerMode::Insert);
+    gd.last_cursor = normal_pointer();
 
     // move to top border
     d.rdp_input_mouse(MOUSE_FLAG_MOVE, 200, 59, nullptr);

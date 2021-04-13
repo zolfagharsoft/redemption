@@ -34,15 +34,21 @@ class mod_api;
 class Font;
 class InStream;
 class WindowListCaps;
-namespace CHANNELS { class ChannelDef; }
-namespace gdi { class GraphicApi; }
+namespace CHANNELS
+{
+    class ChannelDef;
+}
+namespace gdi
+{
+    class GraphicApi;
+}
 
 enum {BORDER_WIDTH_HEIGHT = 3 };
 
 class ClientExecute : public windowing_api
 {
-          FrontAPI             & front_;
-          gdi::GraphicApi      & drawable_;
+          FrontAPI               & front_;
+          gdi::GraphicApi        & drawable_;
           mod_api              * mod_     = nullptr;
     const CHANNELS::ChannelDef * channel_ = nullptr;
     const Font                 * font_    = nullptr;
@@ -280,7 +286,8 @@ private:
 public:
     ClientExecute(
         EventContainer& events,
-        gdi::GraphicApi & drawable, FrontAPI & front,
+        gdi::GraphicApi & drawable,
+        FrontAPI & front,
         WindowListCaps const & window_list_caps, bool verbose);
 
     ~ClientExecute();

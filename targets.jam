@@ -1447,10 +1447,6 @@ test-run tests/core/RDP/caches/test_glyphcache :
 test-run tests/core/RDP/caches/test_pointercache :
   $(REDEMPTION_TEST_PATH)/core/RDP/caches/test_pointercache.cpp
 :
-  <library>src/core/RDP/rdp_pointer.o
-  <library>src/core/error.o
-  <library>src/utils/stacktrace.o
-  $(BOOST_STACKTRACE_LINKFLAGS)
   <covfile>src/core/RDP/caches/pointercache.hpp
 ;
 test-run tests/core/RDP/capabilities/test_activate :
@@ -5736,6 +5732,11 @@ test-run tests/utils/test_bitstream :
 :
   <covfile>src/utils/bitstream.hpp
 ;
+test-run tests/utils/test_cache_mapping :
+  $(REDEMPTION_TEST_PATH)/utils/test_cache_mapping.cpp
+:
+  <covfile>src/utils/cache_mapping.hpp
+;
 test-run tests/utils/test_cfgloader :
   $(REDEMPTION_TEST_PATH)/utils/test_cfgloader.cpp
 :
@@ -6582,6 +6583,7 @@ alias test_bitmap_data_allocator : tests/utils/test_bitmap_data_allocator ;
 alias test_bitmap_from_file : tests/utils/test_bitmap_from_file ;
 alias test_bitset_stream : tests/utils/test_bitset_stream ;
 alias test_bitstream : tests/utils/test_bitstream ;
+alias test_cache_mapping : tests/utils/test_cache_mapping ;
 alias test_cfgloader : tests/utils/test_cfgloader ;
 alias test_channels_authorizations : tests/utils/test_channels_authorizations ;
 alias test_cli : tests/utils/test_cli ;
@@ -6917,6 +6919,7 @@ alias test_bitmap_data_allocator.coverage : tests/utils/test_bitmap_data_allocat
 alias test_bitmap_from_file.coverage : tests/utils/test_bitmap_from_file.coverage ;
 alias test_bitset_stream.coverage : tests/utils/test_bitset_stream.coverage ;
 alias test_bitstream.coverage : tests/utils/test_bitstream.coverage ;
+alias test_cache_mapping.coverage : tests/utils/test_cache_mapping.coverage ;
 alias test_cfgloader.coverage : tests/utils/test_cfgloader.coverage ;
 alias test_cli.coverage : tests/utils/test_cli.coverage ;
 alias test_colors.coverage : tests/utils/test_colors.coverage ;
@@ -7366,6 +7369,7 @@ alias tests/utils.norec :
   tests/utils/test_bitmap_from_file
   tests/utils/test_bitset_stream
   tests/utils/test_bitstream
+  tests/utils/test_cache_mapping
   tests/utils/test_cfgloader
   tests/utils/test_channels_authorizations
   tests/utils/test_cli

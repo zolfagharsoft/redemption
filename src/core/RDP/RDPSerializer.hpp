@@ -209,8 +209,8 @@ protected:
     virtual void flush_orders() = 0;
     virtual void flush_bitmaps() = 0;
 
-    virtual void send_pointer(int cache_idx, RdpPointerView const& cursor) = 0;
-    virtual void cached_pointer_update(int cache_idx) = 0;
+    virtual void send_pointer(uint16_t cache_idx, RdpPointerView const& cursor) = 0;
+    virtual void cached_pointer_update(uint16_t cache_idx) = 0;
 
 public:
     /*****************************************************************************/
@@ -797,32 +797,25 @@ public:
         }
     }
 
-    void set_pointer(uint16_t /*cache_idx*/, RdpPointerView const& cursor, SetPointerMode mode) override
+    void cached_pointer(uint16_t cache_idx) override
     {
-        int cache_idx = 0;
-        switch (this->pointer_cache.add_pointer(cursor, cache_idx)) {
-        case POINTER_TO_SEND:
-            this->send_pointer(cache_idx, cursor);
-        break;
-        default:
-        case POINTER_ALLREADY_SENT:
-            if (this->bmp_cache.owner == BmpCache::Recorder
-             && !this->pointer_cache.is_cached(cache_idx)
-            ) {
-                this->send_pointer(cache_idx, cursor);
-                this->pointer_cache.set_cached(cache_idx, true);
-                break;
-            }
+        auto result_cache = this->pointer_cache.use(cache_idx);
+        auto idx = result_cache.destination_idx;
+
+        if (!result_cache.is_cached) {
+            this->send_pointer(idx, this->pointer_cache.pointer(cache_idx));
         }
 
-        switch (mode) {
-        case SetPointerMode::Cached:
-        case SetPointerMode::Insert:
-            this->cached_pointer_update(cache_idx);
-            break;
-        case SetPointerMode::New:
-            break;
-        }
+        this->cached_pointer_update(idx);
+    }
+
+    void new_pointer(uint16_t cache_idx, RdpPointerView const& cursor) override
+    {
+        this->pointer_cache.insert(cache_idx, cursor);
+    }
+
+    void set_internal_pointer(Pointer const& cursor) override
+    {
     }
 
     // TODO set_palette unimplemented

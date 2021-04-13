@@ -277,11 +277,22 @@ struct UpdatableGraphics : gdi::GraphicApi
         (void)cmd;
     }
 
-    void set_pointer(uint16_t cache_idx, RdpPointerView const& cursor, SetPointerMode mode) override
+    void cached_pointer(uint16_t cache_idx) override
+    {
+        (void)cache_idx;
+        this->has_drawing_event_ = true;
+    }
+
+    void new_pointer(uint16_t cache_idx, RdpPointerView const& cursor) override
     {
         (void)cache_idx;
         (void)cursor;
-        (void)mode;
+        this->has_drawing_event_ = true;
+    }
+
+    void set_internal_pointer(Pointer const& cursor) override
+    {
+        (void)cursor;
         this->has_drawing_event_ = true;
     }
 

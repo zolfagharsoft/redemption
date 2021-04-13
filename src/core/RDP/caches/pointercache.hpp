@@ -21,102 +21,64 @@
 
 #pragma once
 
-
 #include "utils/sugar/noncopyable.hpp"
+#include "utils/cache_mapping.hpp"
+#include "core/error.hpp"
+#include "cxx/cxx.hpp"
 
 #include "core/RDP/rdp_pointer.hpp"
 
 
-enum {
-    POINTER_TO_SEND         = 0,
-    POINTER_ALLREADY_SENT
-};
-
-enum {
-    MAX_POINTER_COUNT = 32
-};
-
 /* difference caches */
-class PointerCache : noncopyable {
-    int pointer_cache_entries;
+class PointerCache : noncopyable
+{
+public:
+    static constexpr std::size_t MAX_POINTER_COUNT = 25;
 
-    /* pointer */
-    int pointer_stamp = 0;
-    int stamps[MAX_POINTER_COUNT] = { 0 };
-
-    bool cached[MAX_POINTER_COUNT] = { false };
+private:
+    using Cache = CacheMapping<Pointer, MAX_POINTER_COUNT, uint16_t>;
 
 public:
-    Pointer Pointers[MAX_POINTER_COUNT];
+    using CacheResult = Cache::CacheResult;
 
-public:
-    explicit PointerCache(int pointer_cache_entries = 0) /*NOLINT*/
-    : pointer_cache_entries(pointer_cache_entries)
+    explicit PointerCache() = default;
+
+    explicit PointerCache(uint16_t pointer_cache_entries)
+    : cache(pointer_cache_entries)
     {}
 
-    ~PointerCache() = default;
-
-    void reset() {
-        this->pointer_stamp = 0;
-
-        for (auto & stamp : this->stamps) {
-            stamp = 0;
-        }
-
-        for (auto & cached_ : this->cached) {
-            cached_ = false;
-        }
-
-        for (auto & pointer : this->Pointers) {
-            pointer = Pointer();
-        }
-    }
-
-    void add_pointer_static(RdpPointerView const& cursor, int index)
+    static uint16_t max_size() noexcept
     {
-        assert((index >= 0) && (index < MAX_POINTER_COUNT));
-        this->Pointers[index] = cursor;
-        this->stamps[index] = this->pointer_stamp;
-        this->cached[index] = true;
+        return MAX_POINTER_COUNT;
     }
 
-    /* check if the pointer is in the cache or not and if it should be sent      */
-    int add_pointer(RdpPointerView const& cursor_, int & cache_idx)
+    void insert(uint16_t cache_idx, RdpPointerView const& cursor)
     {
-        Pointer cursor {cursor_};
+        check(cache_idx);
+        cache.insert(cache_idx, cursor);
+    }
 
-        int oldest = 0x7fffffff;
-        int index = 0;
+    CacheResult use(uint16_t cache_idx) noexcept
+    {
+        check(cache_idx);
+        return cache.use(cache_idx);
+    }
 
-        this->pointer_stamp++;
-        /* look for match */
-        for (int i = 0; i < this->pointer_cache_entries; i++) {
-            if (this->cached[index] && (this->Pointers[i] == cursor)) {
-                this->stamps[i] = this->pointer_stamp;
-                cache_idx = i;
-                return POINTER_ALLREADY_SENT;
-            }
+    Pointer const& pointer(uint16_t cache_idx) const noexcept
+    {
+        return cache[cache_idx];
+    }
+
+private:
+    inline static void check(uint16_t cache_idx)
+    {
+        if (REDEMPTION_UNLIKELY(cache_idx >= max_size())) {
+            LOG(LOG_ERR,
+                "PointerCache::insert pointer cache idx overflow (%u)",
+                cache_idx);
+            throw Error(ERR_RDP_PROCESS_POINTER_CACHE_NOT_OK);
         }
-        /* look for oldest */
-        for (int i = 0; i < this->pointer_cache_entries; i++) {
-            if (this->stamps[i] < oldest) {
-                oldest = this->stamps[i];
-                index  = i;
-            }
-        }
-
-        this->stamps[index] = this->pointer_stamp;
-        cache_idx = index;
-        this->add_pointer_static(cursor, index);
-        return POINTER_TO_SEND;
     }
 
-    [[nodiscard]] bool is_cached(int index) const {
-        return this->cached[index];
-    }
-
-    void set_cached(int index, bool cached) {
-        this->cached[index] = cached;
-    }
+    Cache cache;
 };  // struct PointerCache
-

@@ -763,8 +763,19 @@ public:
         }
     }
 
-    void set_pointer(uint16_t cache_idx, RdpPointerView const& cursor, SetPointerMode mode) override {
-        this->graphic_to_file.set_pointer(cache_idx, cursor, mode);
+    void cached_pointer(uint16_t cache_idx) override
+    {
+        this->graphic_to_file.cached_pointer(cache_idx);
+    }
+
+    void new_pointer(uint16_t cache_idx, RdpPointerView const& cursor) override
+    {
+        this->graphic_to_file.new_pointer(cache_idx, cursor);
+    }
+
+    void set_internal_pointer(Pointer const& cursor) override
+    {
+        this->graphic_to_file.set_internal_pointer(cursor);
     }
 
     WrmCaptureImpl(

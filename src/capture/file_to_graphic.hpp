@@ -23,7 +23,6 @@
 
 #include "capture/wrm_meta_chunk.hpp"
 #include "core/RDP/caches/glyphcache.hpp"
-#include "core/RDP/caches/pointercache.hpp"
 #include "core/RDP/state_chunk.hpp"
 #include "utils/compression_transport_builder.hpp"
 #include "utils/monotonic_clock.hpp"
@@ -70,7 +69,6 @@ private:
     StateChunk ssc;
 
     std::unique_ptr<BmpCache> bmp_cache;
-    PointerCache   ptr_cache;
     GlyphCache     gly_cache;
 
     // variables used to read batch of orders "chunks"

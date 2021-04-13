@@ -120,7 +120,9 @@ public:
         uint16_t cursor_x, uint16_t cursor_y
     ) override;
 
-    void set_pointer(uint16_t cache_idx, RdpPointerView const& cursor, SetPointerMode mode) override;
+    void cached_pointer(uint16_t cache_idx) override;
+    void new_pointer(uint16_t cache_idx, RdpPointerView const& cursor) override;
+    void set_internal_pointer(Pointer const& cursor) override;
 
     void set_palette(const BGRPalette & palette) override;
 

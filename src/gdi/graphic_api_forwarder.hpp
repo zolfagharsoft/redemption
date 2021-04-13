@@ -109,8 +109,14 @@ public:
             override { this->sink.draw(cmd); }
     void draw(RDPBrushCache const & cmd)
             override { this->sink.draw(cmd); }
-    void set_pointer(uint16_t cache_idx, RdpPointerView const& cursor, SetPointerMode mode)
-            override {this->sink.set_pointer(cache_idx, cursor, mode); }
+
+    void cached_pointer(uint16_t cache_idx) override
+        { this->sink.cached_pointer(cache_idx); }
+    void new_pointer(uint16_t cache_idx, RdpPointerView const& cursor) override
+        { this->sink.new_pointer(cache_idx, cursor); }
+    void set_internal_pointer(Pointer const& cursor) override
+        { this->sink.set_internal_pointer(cursor); }
+
     void set_palette(BGRPalette const & palette)
             override { this->sink.set_palette(palette); }
     void sync()

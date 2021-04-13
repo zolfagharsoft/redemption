@@ -941,15 +941,25 @@ public:
             "Front::server_relayout: done");
     }
 
-    void set_pointer(uint16_t cache_idx, RdpPointerView const& cursor, SetPointerMode mode) override {
-        this->gd->set_pointer(cache_idx, cursor, mode);
+    void cached_pointer(uint16_t cache_idx) override
+    {
+        this->gd->cached_pointer(cache_idx);
+    }
+
+    void new_pointer(uint16_t cache_idx, RdpPointerView const& cursor) override
+    {
+        this->gd->new_pointer(cache_idx, cursor);
+    }
+
+    void set_internal_pointer(Pointer const& cursor) override
+    {
+        this->gd->set_internal_pointer(cursor);
     }
 
     void update_pointer_position(uint16_t xPos, uint16_t yPos) override
     {
         this->orders.graphics_update_pdu().update_pointer_position(xPos, yPos);
     }
-
 
     bool has_ocr_pattern_check()
     {

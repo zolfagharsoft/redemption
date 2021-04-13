@@ -55,9 +55,8 @@
 #define INTERNAL_MODULE_MINIMUM_WINDOW_HEIGHT 480
 
 ClientExecute::ClientExecute(
-    EventContainer& events,
-    gdi::GraphicApi & drawable, FrontAPI & front,
-    WindowListCaps const & window_list_caps, bool verbose)
+    EventContainer& events, gdi::GraphicApi & drawable,
+    FrontAPI & front, WindowListCaps const & window_list_caps, bool verbose)
 : front_(front)
 , drawable_(drawable)
 , verbose(verbose)
@@ -1179,13 +1178,12 @@ bool ClientExecute::input_mouse(uint16_t pointerFlags, uint16_t xPos, uint16_t y
 
     // Mouse pointer managment
     if (!this->move_size_initialized) {
-        using SetPointerMode = gdi::GraphicApi::SetPointerMode;
         for (int i = 0; i < Zone::NUMBER_OF_ZONES; i++){
             if (this->zone.get_zone(i, this->window_rect).contains_pt(xPos, yPos)){
                 auto& pointer = this->zone.get_pointer(i);
                 if (&pointer != this->current_mouse_pointer){
                     this->current_mouse_pointer = &pointer;
-                    this->drawable_.set_pointer(0, pointer, SetPointerMode::Insert);
+                    this->drawable_.set_internal_pointer(pointer);
                 }
                 zone_found = true;
                 break;

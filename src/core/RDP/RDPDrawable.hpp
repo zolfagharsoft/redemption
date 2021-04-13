@@ -195,7 +195,9 @@ public:
     void draw(const RDP::RAIL::ActivelyMonitoredDesktop       & /*unused*/) override {}
     void draw(const RDP::RAIL::NonMonitoredDesktop            & /*unused*/) override {}
 
-    void set_pointer(uint16_t cache_idx, RdpPointerView const& cursor, SetPointerMode mode) override;
+    void cached_pointer(uint16_t cache_idx) override;
+    void new_pointer(uint16_t cache_idx, RdpPointerView const& cursor) override;
+    void set_internal_pointer(Pointer const& cursor) override;
 
     void set_mouse_cursor_pos(uint16_t x, uint16_t y)
     {

@@ -737,19 +737,17 @@ void FileToGraphic::interpret_order()
             size_t start_offset = this->stream.get_offset();
             const RdpPointerView cursor = pointer_loader_32x32(this->stream);
 
-            this->ptr_cache.add_pointer_static(cursor, cache_idx);
             for (gdi::GraphicApi * gd : this->graphic_consumers){
-                gd->set_pointer(cache_idx, cursor, gdi::GraphicApi::SetPointerMode::New);
-                gd->set_pointer(cache_idx, cursor, gdi::GraphicApi::SetPointerMode::Cached);
+                gd->new_pointer(cache_idx, cursor);
+                gd->cached_pointer(cache_idx);
             }
 
             this->statistics.CachePointer.total_len += this->stream.get_offset()-start_offset;
             this->statistics.CachePointer.count++;
         }
         else {
-            Pointer const& cursor = this->ptr_cache.Pointers[cache_idx];
             for (gdi::GraphicApi * gd : this->graphic_consumers){
-                gd->set_pointer(cache_idx, cursor, gdi::GraphicApi::SetPointerMode::Cached);
+                gd->cached_pointer(cache_idx);
             }
             this->statistics.PointerIndex.count++;
         }
@@ -765,9 +763,8 @@ void FileToGraphic::interpret_order()
         uint8_t cache_idx     = this->stream.in_uint8();
         const RdpPointerView cursor = pointer_loader_2(this->stream);
 
-        this->ptr_cache.add_pointer_static(cursor, cache_idx);
         for (gdi::GraphicApi * gd : this->graphic_consumers){
-            gd->set_pointer(cache_idx, cursor, gdi::GraphicApi::SetPointerMode::New);
+            gd->new_pointer(cache_idx, cursor);
         }
         this->statistics.CachePointer.total_len += this->stream.get_offset()-start_offset;
         this->statistics.CachePointer.count++;
@@ -786,9 +783,8 @@ void FileToGraphic::interpret_order()
 
         const RdpPointerView cursor = pointer_loader_new(data_bpp, this->stream);
 
-        this->ptr_cache.add_pointer_static(cursor, cache_idx);
         for (gdi::GraphicApi * gd : this->graphic_consumers){
-            gd->set_pointer(cache_idx, cursor, gdi::GraphicApi::SetPointerMode::New);
+            gd->new_pointer(cache_idx, cursor);
         }
         this->statistics.CachePointer.total_len += this->stream.get_offset()-start_offset;
         this->statistics.CachePointer.count++;
