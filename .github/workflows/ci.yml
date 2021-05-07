@@ -42,6 +42,7 @@ jobs:
           deps=(
             libboost-test-dev
             # libboost-tools-dev
+            comerr-dev
             libkrb5-dev
             libsnappy-dev
             # libavcodec-dev
