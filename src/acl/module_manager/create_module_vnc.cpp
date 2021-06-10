@@ -36,6 +36,7 @@ void ModuleManager::create_mod_vnc(
     AuthApi& authentifier, ReportMessageApi& report_message,
     Inifile& ini, gdi::GraphicApi & drawable, FrontAPI& front, ClientInfo const& client_info,
     ClientExecute& rail_client_execute, Keymap2::KeyFlags key_flags)
+
 {
     LOG(LOG_INFO, "ModuleManager::Creation of new mod 'VNC'");
 
