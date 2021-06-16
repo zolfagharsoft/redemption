@@ -220,7 +220,7 @@ inline int shutdown()
     return 0;
 }
 
-
+// add comment by mehrdad
 int main(int argc, char** argv)
 {
     setlocale(LC_CTYPE, "C");
