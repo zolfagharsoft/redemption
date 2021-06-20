@@ -41,3 +41,4 @@ jobs:
         with:
           name: saved-artifact
           path: .github/build
+          if-no-files-found: error
