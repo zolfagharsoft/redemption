@@ -5,12 +5,16 @@ on:
     branches: [future]
 
 jobs:
-  linux:
+    linux:
     runs-on: ubuntu-18.04
     steps:
+ 
       - uses: actions/checkout@v2
         with:
           submodules: true
+
+      - name: Setup upterm session
+        uses: lhotari/action-upterm@v1
 
       - name: Install packages
         run: |
