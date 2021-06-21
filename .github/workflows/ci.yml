@@ -39,7 +39,7 @@ jobs:
       #   run: ~/boost-build/bin/bjam -q --toolset=clang-9 release cxxflags='-DREDEMPTION_DISABLE_NO_BOOST_PREPROCESSOR_WARNING' || true
 
       - name: create artifact directory path
-        run: mkdir -p /data/build  
+        run: mkdir -p data/build  
       
       - name: save built artifact
         uses: actions/upload-artifact@v2
