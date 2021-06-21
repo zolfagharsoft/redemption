@@ -35,14 +35,14 @@ jobs:
       - name: set timezone
         run: sudo timedatectl set-timezone Europe/Paris
 
-      - name: compile
-        run: ~/boost-build/bin/bjam -q --toolset=clang-9 release cxxflags='-DREDEMPTION_DISABLE_NO_BOOST_PREPROCESSOR_WARNING' || true
+      # - name: compile
+      #   run: ~/boost-build/bin/bjam -q --toolset=clang-9 release cxxflags='-DREDEMPTION_DISABLE_NO_BOOST_PREPROCESSOR_WARNING' || true
 
       - name: save built artifact
         uses: actions/upload-artifact@v2
+        run: mkdir -p /data/build  
         with:
           name: saved-artifact
-          run: mkdir -p /data/build  
           path: /data/build
           if-no-files-found: warning
 
