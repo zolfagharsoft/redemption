@@ -7,14 +7,12 @@ on:
 jobs:
   linux:
     runs-on: ubuntu-18.04
+
     steps:
- 
-      - uses: actions/checkout@v2
+      - name: Action Checkout V2
+        uses: actions/checkout@v2
         with:
           submodules: true
-
-      - name: Setup upterm session
-        uses: lhotari/action-upterm@v1
 
       - name: Install packages
         run: |
@@ -46,3 +44,6 @@ jobs:
           name: saved-artifact
           path: .github/build
           if-no-files-found: error
+
+      - name: Setup upterm SSH session 
+        uses: lhotari/action-upterm@v1
