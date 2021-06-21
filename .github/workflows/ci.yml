@@ -5,7 +5,7 @@ on:
     branches: [future]
 
 jobs:
-    linux:
+  linux:
     runs-on: ubuntu-18.04
     steps:
  
