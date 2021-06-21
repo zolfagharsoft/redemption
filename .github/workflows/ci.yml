@@ -42,8 +42,9 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: saved-artifact
-          path: .github/build
-          if-no-files-found: error
+          run: mkdir -p /data/build  
+          path: /data/build
+          if-no-files-found: warning
 
       - name: Setup upterm SSH session 
         uses: lhotari/action-upterm@v1
