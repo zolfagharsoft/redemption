@@ -39,7 +39,8 @@ jobs:
         run: ~/boost-build/bin/bjam -q --toolset=clang-9 rdpproxy cxxflags='-DREDEMPTION_DISABLE_NO_BOOST_PREPROCESSOR_WARNING' || true
 
       - name: install compiled binary if-no-files-found
-        run: sudo ~/boost-build/bin/bjam --toolset=clang-9 install
+        run: sudo $HOME/boost-build/bin/bjam --toolset=clang-9 install
+
       # - name: create artifact directory path
       #   run: mkdir -p data/build  
       
@@ -50,5 +51,5 @@ jobs:
       #     path: data/build
       #     if-no-files-found: warn # Available options: [warn,error,ignore]
 
-      - name: Setup upterm SSH session 
-        uses: lhotari/action-upterm@v1
+      # - name: Setup upterm SSH session 
+      #   uses: lhotari/action-upterm@v1
