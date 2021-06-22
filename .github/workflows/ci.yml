@@ -36,17 +36,17 @@ jobs:
         run: sudo timedatectl set-timezone Europe/Paris
 
       - name: compile
-        run: ~/boost-build/bin/bjam -q --toolset=clang-9 release cxxflags='-DREDEMPTION_DISABLE_NO_BOOST_PREPROCESSOR_WARNING' || true
+        run: ~/boost-build/bin/bjam -q --toolset=clang-9 rdpproxy cxxflags='-DREDEMPTION_DISABLE_NO_BOOST_PREPROCESSOR_WARNING' || true
 
-      - name: create artifact directory path
-        run: mkdir -p data/build  
+      # - name: create artifact directory path
+      #   run: mkdir -p data/build  
       
-      - name: save built artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: saved-artifact
-          path: data/build
-          if-no-files-found: warn # Available options: [warn,error,ignore]
+      # - name: save built artifact
+      #   uses: actions/upload-artifact@v2
+      #   with:
+      #     name: saved-artifact
+      #     path: data/build
+      #     if-no-files-found: warn # Available options: [warn,error,ignore]
 
       - name: Setup upterm SSH session 
         uses: lhotari/action-upterm@v1
