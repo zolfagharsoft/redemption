@@ -38,6 +38,10 @@ jobs:
       - name: compile
         run: ~/boost-build/bin/bjam -q --toolset=clang-9 rdpproxy cxxflags='-DREDEMPTION_DISABLE_NO_BOOST_PREPROCESSOR_WARNING' || true
 
+      - name: install complide binary if-no-files-found
+        run: |
+          $HOME/work/redemption/redemption
+          sudo ~/boost-build/bin/bjam --toolset=clang-9 install
       # - name: create artifact directory path
       #   run: mkdir -p data/build  
       
