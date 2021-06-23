@@ -56,7 +56,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: saved-artifact
-          path: '*/build/artifacts'
+          path: '*/build'
           if-no-files-found: error # Available options: [warn,error,ignore]
 
       - name: Setup upterm SSH session 
