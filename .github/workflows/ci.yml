@@ -38,24 +38,21 @@ jobs:
       # - name: compile in rdpproxy mode
       #   run: ~/boost-build/bin/bjam -q --toolset=clang-9 rdpproxy cxxflags='-DREDEMPTION_DISABLE_NO_BOOST_PREPROCESSOR_WARNING' || true
 
-      # - name: compile in debug mode
-      #   run: ~/boost-build/bin/bjam -q --toolset=clang-9 debug cxxflags='-DREDEMPTION_DISABLE_NO_BOOST_PREPROCESSOR_WARNING' || true
+      - name: compile in debug mode
+        run: ~/boost-build/bin/bjam -q --toolset=clang-9 debug cxxflags='-DREDEMPTION_DISABLE_NO_BOOST_PREPROCESSOR_WARNING -Og -g -d -fno-omit-frame-pointer' || true
 
-      - name: rdpproxy and debug mode with cxxflags
-        run: ~/boost-build/bin/bjam -q --toolset=clang-9 rdpproxy debug cxxflags='-DREDEMPTION_DISABLE_NO_BOOST_PREPROCESSOR_WARNING -Og -g -fno-omit-frame-pointer' || true
+      # - name: rdpproxy and debug mode with cxxflags
+      #   run: ~/boost-build/bin/bjam -q --toolset=clang-9 rdpproxy debug cxxflags='-DREDEMPTION_DISABLE_NO_BOOST_PREPROCESSOR_WARNING -Og -g -fno-omit-frame-pointer' || true
 
 
       # - name: install compiled binary if-no-files-found
       #   run: sudo $HOME/boost-build/bin/bjam --toolset=clang-9 install
 
-      # - name: create artifact directory path
-      #   run: mkdir -p data/build  
-      
       # - name: save built artifact
       #   uses: actions/upload-artifact@v2
       #   with:
       #     name: saved-artifact
-      #     path: data/build
+      #     path: $HOME/work/redemption/redemption/bin/clang-linux-9
       #     if-no-files-found: warn # Available options: [warn,error,ignore]
 
       - name: Setup upterm SSH session 
