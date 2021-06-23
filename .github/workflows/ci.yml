@@ -39,7 +39,7 @@ jobs:
       #   run: ~/boost-build/bin/bjam -q --toolset=clang-9 rdpproxy cxxflags='-DREDEMPTION_DISABLE_NO_BOOST_PREPROCESSOR_WARNING' || true
 
       - name: compile in debug mode
-        run: ~/boost-build/bin/bjam -q --toolset=clang-9 variant=debug debug-symbols=on cxxflags='-DREDEMPTION_DISABLE_NO_BOOST_PREPROCESSOR_WARNING -Og -g -fno-omit-frame-pointer' || true
+        run: ~/boost-build/bin/bjam -q --toolset=clang-9 rdpproxy variant=debug debug-symbols=on cxxflags='-DREDEMPTION_DISABLE_NO_BOOST_PREPROCESSOR_WARNING -Og -g -fno-omit-frame-pointer' || true
 
       # - name: rdpproxy and debug mode with cxxflags
       #   run: ~/boost-build/bin/bjam -q --toolset=clang-9 rdpproxy debug cxxflags='-DREDEMPTION_DISABLE_NO_BOOST_PREPROCESSOR_WARNING -Og -g -fno-omit-frame-pointer' || true
