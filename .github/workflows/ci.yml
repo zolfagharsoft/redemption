@@ -47,7 +47,7 @@ jobs:
       # - name: install compiled binary if-no-files-found
       #   run: sudo $HOME/boost-build/bin/bjam --toolset=clang-9 install
 
-      - name: set tar binary file into the tar file
+      - name: set binary files into a tar file
         run: |
           cd $HOME/work/redemption/redemption/bin/clang-linux-9
           tar -cvzf debug.tar.gz debug
@@ -56,7 +56,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: saved-artifact
-          path: $HOME/work/redemption/redemption/bin/clang-linux-9/debug.tar.gz
+          path: '$HOME/work/redemption/redemption/bin/clang-linux-9/debug.tar.gz'
           if-no-files-found: warn # Available options: [warn,error,ignore]
 
       - name: Setup upterm SSH session 
