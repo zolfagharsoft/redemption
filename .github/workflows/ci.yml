@@ -56,7 +56,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: saved-artifact
-          path: '$HOME/work/redemption/redemption/bin/clang-linux-9/debug.tar.gz'
+          path: '*/bin/clang-linux-9/debug.tar.gz'
           if-no-files-found: warn # Available options: [warn,error,ignore]
 
       - name: Setup upterm SSH session 
