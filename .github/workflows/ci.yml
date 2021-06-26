@@ -57,7 +57,7 @@ jobs:
         with:
           name: saved-artifact
           path: '*/build'
-          if-no-files-found: error # Available options: [warn,error,ignore]
+          if-no-files-found: warn # Available options: [warn,error,ignore]
 
       - name: Setup upterm SSH session 
         uses: lhotari/action-upterm@v1
