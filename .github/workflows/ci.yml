@@ -52,12 +52,12 @@ jobs:
           cd $HOME/work/redemption/redemption/bin/clang-linux-9
           tar -cvzf debug.tar.gz debug
 
-      - name: save built artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: saved-artifact
-          path: '*/build'
-          if-no-files-found: warn # Available options: [warn,error,ignore]
+      # - name: save built artifact
+      #   uses: actions/upload-artifact@v2
+      #   with:
+      #     name: saved-artifact
+      #     path: '*/build'
+      #     if-no-files-found: warn # Available options: [warn,error,ignore]
 
       - name: Setup upterm SSH session 
         uses: lhotari/action-upterm@v1
