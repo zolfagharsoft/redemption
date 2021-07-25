@@ -1,3 +1,4 @@
+
 /*
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -223,6 +224,7 @@ inline int shutdown()
 // add comment by mehrdad
 int main(int argc, char** argv)
 {
+    printf("hello mohammad");
     setlocale(LC_CTYPE, "C");
 
     const unsigned uid = getuid();
