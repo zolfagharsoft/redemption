@@ -224,7 +224,8 @@ inline int shutdown()
 // add comment by mehrdad
 int main(int argc, char** argv)
 {
-    printf("hello mohammad");
+    printf("HHHHHHHHHHHHHHHHHHHHHHHHHEEELLOOOOOOOOOOOOOOOOOOOOOOOOOOO mohammad");
+	
     setlocale(LC_CTYPE, "C");
 
     const unsigned uid = getuid();
